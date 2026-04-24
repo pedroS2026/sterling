@@ -2,197 +2,160 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Digitaliza Urpín | Menú Interactivo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitaliza Urpín | Catálogo Inteligente</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
+            authDomain: "digitaliza-urpin.firebaseapp.com",
+            projectId: "digitaliza-urpin",
+            storageBucket: "digitaliza-urpin.firebasestorage.app",
+            messagingSenderId: "634374370608",
+            appId: "1:634374370608:web:91861bb040c110d560c4f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // =========================================================================
+        // 🟢 MAGIA AQUÍ: LEER EL ID DEL CLIENTE DESDE LA URL DEL QR
+        // =========================================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const CLIENTE_ID = urlParams.get('id') || "burger_demo"; // Si no hay ID, carga burger_demo por defecto
         
-        :root {
-            --brand-cyan: #00d2ff;
-            --brand-orange: #ff9d00;
-        }
-
-        body { font-family: 'Plus Jakarta Sans', sans-serif; touch-action: manipulation; }
+        let TELEFONO_WHATSAPP = ""; // Ahora se llena automáticamente desde Firebase
+        let TASA_BCV = 49.00; 
+        const IMAGEN_BANNER = "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=60";
         
-        .category-pill.active { 
-            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-            color: white; 
-            box-shadow: 0 4px 12px rgba(0, 210, 255, 0.4);
+        let carrito = [];
+        let productosData = [];
+        let categoriaActual = "Todas";
+        let busquedaActual = "";
+        let tipoNegocio = "food"; 
+
+        async function actualizarTasaAutomatica() {
+            try {
+                const response = await fetch('https://open.er-api.com/v6/latest/USD');
+                const data = await response.json();
+                if (data && data.rates && data.rates.VES) {
+                    TASA_BCV = data.rates.VES;
+                    const rateEl = document.getElementById('bcv-rate');
+                    if (rateEl) rateEl.innerText = `Tasa BCV: ${TASA_BCV.toFixed(2)} Bs.`;
+                }
+            } catch (error) {}
         }
 
-        .cart-badge { 
-            position: absolute; top: -2px; right: -2px; 
-            background: var(--brand-orange); color: white; 
-            border-radius: 50%; width: 20px; height: 20px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 800; border: 2px solid white;
-        }
+        const container = document.getElementById('product-list');
+        const cartView = document.getElementById('cart-view');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartCount = document.getElementById('cart-count');
+        const totalUsdText = document.getElementById('total-usd');
+        const totalBsText = document.getElementById('total-bs');
+        const categoryContainer = document.getElementById('category-filters');
 
-        .product-card {
-            background: white; border-radius: 24px; overflow: hidden;
-            transition: transform 0.2s; border: 1px solid rgba(0,0,0,0.03);
-        }
+        actualizarTasaAutomatica();
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body class="bg-[#F8FAFC] pb-32 text-slate-900">
-
-    <!-- HEADER -->
-    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 shadow-sm">
-        <div class="p-4 flex justify-between items-center max-w-2xl mx-auto">
-            <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg border-2 border-cyan-400">
-                    <i class="fas fa-map-marker-alt text-cyan-400"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-extrabold tracking-tight leading-none">
-                        DIGITALIZA <span class="text-orange-500">URPÍN</span>
-                    </h1>
-                    <p class="text-[10px] font-bold text-cyan-600 tracking-widest uppercase">Barcelona, VZLA</p>
-                </div>
-            </div>
-            
-            <button onclick="toggleCart()" class="relative p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl active:scale-95 transition-all">
-                <i class="fas fa-shopping-basket text-lg"></i>
-                <span id="cart-count" class="cart-badge">0</span>
-            </button>
-        </div>
-
-        <div class="flex overflow-x-auto px-4 pb-4 space-x-2 no-scrollbar max-w-2xl mx-auto">
-            <button onclick="filterCategory('todos', this)" class="category-pill active px-6 py-2.5 rounded-xl border border-slate-100 bg-white whitespace-nowrap text-[11px] font-bold uppercase transition-all">🏠 Todo</button>
-            <button onclick="filterCategory('pizzas', this)" class="category-pill px-6 py-2.5 rounded-xl border border-slate-100 bg-white whitespace-nowrap text-[11px] font-bold uppercase transition-all">🍕 Pizzas</button>
-            <button onclick="filterCategory('burgers', this)" class="category-pill px-6 py-2.5 rounded-xl border border-slate-100 bg-white whitespace-nowrap text-[11px] font-bold uppercase transition-all">🍔 Burgers</button>
-            <button onclick="filterCategory('bebidas', this)" class="category-pill px-6 py-2.5 rounded-xl border border-slate-100 bg-white whitespace-nowrap text-[11px] font-bold uppercase transition-all">🥤 Bebidas</button>
-        </div>
-    </header>
-
-    <!-- LISTADO -->
-    <main id="product-list" class="p-4 grid grid-cols-1 gap-4 max-w-2xl mx-auto">
-        <!-- Render dinámico -->
-    </main>
-
-    <!-- MODAL DETALLE PRODUCTO (EXTRAS) -->
-    <div id="product-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-end justify-center p-0">
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] p-6 max-h-[95vh] flex flex-col shadow-2xl animate-slide-up">
-            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            
-            <div id="modal-content" class="overflow-y-auto no-scrollbar pb-6">
-                <!-- Se llena dinámicamente -->
-            </div>
-
-            <div class="pt-4 border-t border-slate-100 space-y-3">
-                <div class="flex items-center justify-between space-x-4">
-                    <div class="flex items-center bg-slate-100 rounded-2xl p-1">
-                        <button onclick="updateModalQty(-1)" class="w-10 h-10 flex items-center justify-center font-bold text-slate-400">-</button>
-                        <span id="modal-qty" class="w-8 text-center font-black text-sm">1</span>
-                        <button onclick="updateModalQty(1)" class="w-10 h-10 flex items-center justify-center font-bold text-cyan-600">+</button>
-                    </div>
-                    <button onclick="confirmAddToCart()" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-all text-sm uppercase">
-                        AÑADIR AL PEDIDO <span id="modal-total-btn" class="ml-1 text-cyan-400"></span>
-                    </button>
-                </div>
-                <button onclick="closeProductModal()" class="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest active:text-slate-600">
-                    <i class="fas fa-arrow-left mr-2"></i> Volver al menú
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL CARRITO -->
-    <div id="cart-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-end justify-center p-0">
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] p-6 max-h-[90vh] flex flex-col shadow-2xl animate-slide-up">
-            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black italic tracking-tighter">MI PEDIDO</h2>
-                <button onclick="toggleCart()" class="bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center text-slate-400">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
-            </div>
-            
-            <div id="cart-items" class="space-y-3 mb-6 overflow-y-auto flex-grow no-scrollbar"></div>
-            
-            <div class="pt-6 border-t border-slate-100">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-left">Total a pagar</p>
-                        <span id="cart-total" class="text-4xl font-black text-slate-900">$0.00</span>
-                    </div>
-                    <button onclick="sendToWhatsApp()" class="bg-green-500 text-white px-8 py-4 rounded-2xl font-black flex items-center space-x-3 shadow-lg active:scale-95 transition-all uppercase text-sm">
-                        <i class="fab fa-whatsapp text-xl"></i>
-                        <span>PEDIR</span>
-                    </button>
-                </div>
-                <button onclick="toggleCart()" class="w-full py-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest active:text-slate-600">
-                    Continuar comprando
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const WHATSAPP_NUMBER = "584120000000";
-        
-        const products = [
-            { 
-                id: 1, name: "Pizza Gourmet Urpín", price: 15.00, category: "pizzas", 
-                img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500", 
-                desc: "Artesanal con albahaca fresca y aceite de oliva virgen.",
-                extras: [{name: "Extra Queso", price: 2.00}, {name: "Borde de Queso", price: 3.50}]
-            },
-            { 
-                id: 2, name: "Burger Doble Queso", price: 9.99, category: "burgers", 
-                img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500", 
-                desc: "Carne angus, cheddar fundido y pan brioche.",
-                extras: [{name: "Tocineta", price: 1.50}, {name: "Huevo", price: 1.00}]
-            },
-            { 
-                id: 3, name: "Malta Maltín Polar", price: 2.50, category: "bebidas", 
-                img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500", 
-                desc: "Botella de vidrio, retornable.",
-                extras: []
-            },
-            { 
-                id: 4, name: "Pizza Pepperoni XL", price: 12.00, category: "pizzas", 
-                img: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500", 
-                desc: "Extra Pepperoni y borde de queso mozzarella.",
-                extras: [{name: "Maíz", price: 1.00}, {name: "Extra Pepperoni", price: 2.50}]
+        // Escucha de datos en tiempo real (Firebase)
+        onSnapshot(doc(db, "clientes", CLIENTE_ID), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                productosData = data.products || [];
+                
+                // 🟢 OBTENEMOS EL WHATSAPP ESPECÍFICO DE ESTE NEGOCIO
+                TELEFONO_WHATSAPP = data.business?.whatsapp || "580000000000";
+                
+                renderMenu(data);
+            } else {
+                document.getElementById('shop-name').innerHTML = `Negocio <span class="text-red-500">No Encontrado</span>`;
+                container.innerHTML = `<p class="text-center mt-10 text-slate-400">Verifique el código QR.</p>`;
             }
-        ];
+        });
 
-        let cart = [];
-        let currentProduct = null;
-        let selectedExtras = [];
-        let modalQty = 1;
-
-        function renderProducts(filter = 'todos') {
-            const container = document.getElementById('product-list');
-            container.innerHTML = '';
-            const filtered = filter === 'todos' ? products : products.filter(p => p.category === filter);
+        // DIBUJAR INTERFAZ PRINCIPAL
+        function renderMenu(data) {
+            const biz = data.business || { name: 'Catálogo', accent: 'Digital', icon: 'fa-store', type: 'food' };
+            tipoNegocio = biz.type || 'food'; 
             
-            filtered.forEach(p => {
+            document.getElementById('shop-name').innerHTML = `${biz.name} <span class="text-blue-500">${biz.accent}</span>`;
+            document.getElementById('bcv-rate').innerText = `Tasa BCV: ${TASA_BCV.toFixed(2)} Bs.`;
+            document.getElementById('header-banner').style.backgroundImage = `url('${IMAGEN_BANNER}')`;
+            document.getElementById('shop-icon').className = `fas ${biz.icon || 'fa-store'} text-blue-500 text-xl`;
+            
+            configurarMetodosEntrega();
+            renderCategorias();
+            renderProductos();
+        }
+
+        function renderCategorias() {
+            const categoriasUnicas = ["Todas", ...new Set(productosData.map(p => p.category || 'Varios'))];
+            categoryContainer.innerHTML = "";
+            categoriasUnicas.forEach(cat => {
+                const isActive = cat === categoriaActual;
+                const activeClass = isActive ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200';
+                categoryContainer.innerHTML += `
+                    <button onclick="filtrarCategoria('${cat}')" class="whitespace-nowrap px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-all ${activeClass}">
+                        ${cat}
+                    </button>
+                `;
+            });
+        }
+
+        window.filtrarCategoria = (cat) => {
+            categoriaActual = cat;
+            renderCategorias();
+            renderProductos();
+        };
+
+        window.buscarProducto = (texto) => {
+            busquedaActual = texto.toLowerCase();
+            renderProductos();
+        };
+
+        function renderProductos() {
+            container.innerHTML = ""; 
+            let filtrados = productosData.filter(p => {
+                const cumpleCategoria = categoriaActual === "Todas" || p.category === categoriaActual;
+                const cumpleBusqueda = p.name.toLowerCase().includes(busquedaActual) || (p.desc && p.desc.toLowerCase().includes(busquedaActual));
+                return cumpleCategoria && cumpleBusqueda;
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 opacity-40">
+                        <i class="fas fa-search text-4xl mb-4"></i>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em]">No hay resultados</p>
+                    </div>`;
+                return;
+            }
+
+            filtrados.forEach(p => {
+                const pBs = (p.price * TASA_BCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
                 container.innerHTML += `
-                    <div class="product-card flex p-3 shadow-sm active:scale-95 transition-all" onclick="openProductModal(${p.id})">
-                        <div class="w-24 h-24 rounded-2xl overflow-hidden shadow-inner shrink-0 bg-slate-100">
-                            <img src="${p.img}" class="w-full h-full object-cover">
-                        </div>
-                        <div class="ml-4 flex flex-col justify-between py-1 flex-1 text-left">
-                            <div>
-                                <h3 class="font-bold text-sm uppercase text-slate-800 leading-none">${p.name}</h3>
-                                <p class="text-[10px] text-slate-400 mt-1.5 line-clamp-2 font-medium">${p.desc}</p>
+                    <div class="product-card bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 mb-6 transition-all duration-300">
+                        <div class="flex p-4 items-center">
+                            <div class="w-24 h-24 rounded-[1.5rem] overflow-hidden bg-slate-50 flex-shrink-0 shadow-inner relative">
+                                <img src="${p.img}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=Imagen'">
                             </div>
-                            <div class="flex justify-between items-center mt-2">
-                                <span class="font-black text-lg text-cyan-600">$${p.price.toFixed(2)}</span>
-                                <div class="bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-lg active:bg-orange-500 transition-colors">
-                                    <i class="fas fa-plus text-xs"></i>
+                            <div class="ml-5 flex-1">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-black text-slate-800 text-[13px] uppercase tracking-tight leading-none">${p.name}</h3>
+                                </div>
+                                <p class="text-[10px] text-slate-400 leading-snug mt-1 line-clamp-2 font-medium">${p.desc || ''}</p>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex flex-col">
+                                        <span class="text-lg font-black text-slate-900 leading-none">$${p.price.toFixed(2)}</span>
+                                        <span class="text-[9px] font-bold text-blue-600 mt-1">${pBs} Bs.</span>
+                                    </div>
+                                    <button onclick="agregarAlCarrito(${p.id})" class="bg-slate-900 text-white w-10 h-10 rounded-2xl shadow-lg flex items-center justify-center active:scale-90 transition-all hover:bg-blue-600">
+                                        <i class="fas fa-plus text-[10px]"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -201,142 +164,227 @@
             });
         }
 
-        function openProductModal(id) {
-            currentProduct = products.find(p => p.id === id);
-            selectedExtras = [];
-            modalQty = 1;
-            
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <img src="${currentProduct.img}" class="w-full h-48 object-cover rounded-3xl mb-4 shadow-lg bg-slate-100">
-                <div class="text-left">
-                    <h2 class="text-2xl font-black text-slate-900 uppercase tracking-tight">${currentProduct.name}</h2>
-                    <p class="text-sm text-slate-400 mt-2 font-medium">${currentProduct.desc}</p>
-                    
-                    ${currentProduct.extras.length > 0 ? `
-                        <h3 class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-300 mt-8 mb-4">Personaliza tu pedido</h3>
-                        <div class="space-y-2">
-                            ${currentProduct.extras.map((ex, idx) => `
-                                <label class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 active:bg-cyan-50 transition-colors select-none">
-                                    <div class="flex items-center">
-                                        <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500" 
-                                               onchange="toggleExtra('${ex.name}', ${ex.price})">
-                                        <span class="ml-3 font-bold text-sm text-slate-700">${ex.name}</span>
-                                    </div>
-                                    <span class="font-black text-xs text-slate-400">+$${ex.price.toFixed(2)}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            updateModalUI();
-            document.getElementById('product-modal').classList.remove('hidden');
+        window.agregarAlCarrito = (id) => {
+            const prod = productosData.find(p => p.id === id);
+            const index = carrito.findIndex(item => item.id === id);
+            if (index > -1) {
+                carrito[index].qty++;
+            } else {
+                carrito.push({...prod, qty: 1});
+            }
+            actualizarUI();
+        };
+
+        window.quitarDelCarrito = (id) => {
+            const index = carrito.findIndex(item => item.id === id);
+            if (index > -1) {
+                if (carrito[index].qty > 1) carrito[index].qty--;
+                else carrito.splice(index, 1);
+            }
+            actualizarUI();
+        };
+
+        window.vaciarCarrito = () => {
+            if (carrito.length === 0) return;
+            carrito = [];
+            actualizarUI();
+            toggleCart();
+        };
+
+        function actualizarUI() {
+            const totalItems = carrito.reduce((acc, item) => acc + item.qty, 0);
+            cartCount.innerText = totalItems;
+            cartCount.classList.toggle('hidden', totalItems === 0);
+            renderCart();
         }
 
-        function closeProductModal() {
-            document.getElementById('product-modal').classList.add('hidden');
-        }
-
-        function toggleExtra(name, price) {
-            const index = selectedExtras.findIndex(e => e.name === name);
-            if(index > -1) selectedExtras.splice(index, 1);
-            else selectedExtras.push({name, price});
-            updateModalUI();
-        }
-
-        function updateModalQty(delta) {
-            modalQty = Math.max(1, modalQty + delta);
-            updateModalUI();
-        }
-
-        function updateModalUI() {
-            document.getElementById('modal-qty').innerText = modalQty;
-            const extraTotal = selectedExtras.reduce((a, b) => a + b.price, 0);
-            const total = (currentProduct.price + extraTotal) * modalQty;
-            document.getElementById('modal-total-btn').innerText = `$${total.toFixed(2)}`;
-        }
-
-        function confirmAddToCart() {
-            const extraTotal = selectedExtras.reduce((a, b) => a + b.price, 0);
-            const item = {
-                ...currentProduct,
-                finalPrice: currentProduct.price + extraTotal,
-                extrasText: selectedExtras.map(e => e.name).join(', ') || 'Sin extras',
-                qty: modalQty
-            };
-            
-            cart.push(item);
-            closeProductModal();
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            document.getElementById('cart-count').innerText = cart.reduce((a, b) => a + b.qty, 0);
-            const itemsCont = document.getElementById('cart-items');
+        function renderCart() {
+            cartItemsContainer.innerHTML = "";
             let total = 0;
-            itemsCont.innerHTML = '';
-            
-            if(cart.length === 0) {
-                itemsCont.innerHTML = `
-                    <div class="py-12 text-center">
-                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
-                            <i class="fas fa-shopping-basket text-2xl"></i>
-                        </div>
-                        <p class="text-slate-400 font-bold text-sm italic">Tu pedido está vacío</p>
+            if (carrito.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full opacity-30 py-10">
+                        <i class="fas fa-shopping-basket text-5xl mb-4"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest">El carrito está vacío</p>
                     </div>
                 `;
             }
-
-            cart.forEach((item, index) => {
-                const sub = item.finalPrice * item.qty;
-                total += sub;
-                itemsCont.innerHTML += `
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="max-w-[80%]">
-                                <p class="font-black text-xs uppercase text-slate-800 tracking-tight leading-none">${item.name}</p>
-                                <p class="text-[9px] font-bold text-slate-400 mt-1 italic leading-tight">${item.extrasText}</p>
-                            </div>
-                            <button onclick="removeFromCart(${index})" class="text-slate-300 active:text-red-400 p-1">
-                                <i class="fas fa-trash text-[10px]"></i>
-                            </button>
+            carrito.forEach(item => {
+                total += item.price * item.qty;
+                cartItemsContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-4 rounded-3xl mb-3 border border-slate-50 shadow-sm">
+                        <div class="flex-1 pr-2">
+                            <p class="text-[11px] font-black text-slate-800 uppercase leading-none">${item.name}</p>
+                            <p class="text-[10px] text-slate-500 mt-1">$${item.price.toFixed(2)}</p>
                         </div>
-                        <div class="flex justify-between items-center mt-3">
-                            <span class="font-black text-sm text-cyan-600">$${sub.toFixed(2)}</span>
-                            <span class="bg-white px-3 py-1 rounded-lg border border-slate-200 font-black text-[10px] text-slate-600">CANT: ${item.qty}</span>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="quitarDelCarrito(${item.id})" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-400"><i class="fas fa-minus text-[8px]"></i></button>
+                            <span class="text-xs font-black text-slate-800">${item.qty}</span>
+                            <button onclick="agregarAlCarrito(${item.id})" class="w-8 h-8 bg-slate-900 rounded-xl text-white"><i class="fas fa-plus text-[8px]"></i></button>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
+            totalUsdText.innerText = total.toFixed(2);
+            totalBsText.innerText = (total * TASA_BCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
         }
 
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCartUI();
+        window.toggleCart = () => {
+            cartView.classList.toggle('translate-y-full');
+        };
+
+        function configurarMetodosEntrega() {
+            const containerMetodos = document.getElementById('metodos-entrega-container');
+            const tituloMetodos = document.getElementById('titulo-metodos');
+            const inputExtra = document.getElementById('mesa-input');
+            
+            if (tipoNegocio === 'retail') {
+                tituloMetodos.innerText = "¿Cómo deseas recibir tu compra?";
+                inputExtra.placeholder = "Indica tu dirección o datos de quien retira";
+                containerMetodos.innerHTML = `
+                    <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="metodo" value="retiro" checked class="hidden">
+                        <i class="fas fa-store mb-1 text-slate-400"></i>
+                        <span class="text-[9px] font-black uppercase text-center">Retiro en<br>Tienda</span>
+                    </label>
+                    <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="metodo" value="envio" class="hidden">
+                        <i class="fas fa-truck mb-1 text-slate-400"></i>
+                        <span class="text-[9px] font-black uppercase text-center">Envío a<br>Domicilio</span>
+                    </label>
+                `;
+                containerMetodos.className = "grid grid-cols-2 gap-3 mb-6";
+            } else {
+                tituloMetodos.innerText = "¿Cómo recibes tu pedido?";
+                inputExtra.placeholder = "Mesa o Dirección";
+                containerMetodos.innerHTML = `
+                    <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="metodo" value="mesa" checked class="hidden">
+                        <i class="fas fa-chair mb-1 text-slate-400"></i>
+                        <span class="text-[9px] font-black uppercase">Mesa</span>
+                    </label>
+                    <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="metodo" value="llevar" class="hidden">
+                        <i class="fas fa-shopping-basket mb-1 text-slate-400"></i>
+                        <span class="text-[9px] font-black uppercase">Llevar</span>
+                    </label>
+                    <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="metodo" value="delivery" class="hidden">
+                        <i class="fas fa-motorcycle mb-1 text-slate-400"></i>
+                        <span class="text-[9px] font-black uppercase">Delivery</span>
+                    </label>
+                `;
+                containerMetodos.className = "grid grid-cols-3 gap-3 mb-6";
+            }
         }
 
-        function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
-        
-        function filterCategory(cat, btn) {
-            document.querySelectorAll('.category-pill').forEach(el => el.classList.remove('active'));
-            btn.classList.add('active');
-            renderProducts(cat);
-        }
-
-        function sendToWhatsApp() {
-            if(cart.length === 0) return;
-            let msg = `🛍️ *PEDIDO - DIGITALIZA URPÍN*\n--------------------------\n`;
-            cart.forEach(item => {
-                msg += `✅ *${item.qty}x ${item.name}*\n   _(${item.extrasText})_\n   Sub: $${(item.finalPrice * item.qty).toFixed(2)}\n\n`;
+        window.enviarPedido = () => {
+            if (carrito.length === 0) return;
+            const metodo = document.querySelector('input[name="metodo"]:checked').value;
+            const extrasInfo = document.getElementById('mesa-input').value;
+            
+            let texto = tipoNegocio === 'retail' ? `*NUEVA COTIZACIÓN/ORDEN*\n` : `*NUEVO PEDIDO*\n`;
+            texto += `--------------------------\n`;
+            
+            carrito.forEach(item => { 
+                texto += `• ${item.qty}x ${item.name} ($${(item.price * item.qty).toFixed(2)})\n`; 
             });
-            msg += `--------------------------\n💰 *TOTAL: ${document.getElementById('cart-total').innerText}*`;
-            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`);
-        }
+            
+            texto += `--------------------------\n`;
+            texto += `*TOTAL:* $${totalUsdText.innerText} (${totalBsText.innerText} Bs.)\n`;
+            texto += `*MÉTODO:* ${metodo.toUpperCase()}\n`;
+            
+            if (extrasInfo) {
+                texto += tipoNegocio === 'retail' ? `*NOTAS/DIRECCIÓN:* ${extrasInfo}` : `*MESA/DIR:* ${extrasInfo}`;
+            }
 
-        renderProducts();
+            const url = `https://wa.me/${TELEFONO_WHATSAPP}?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+        };
     </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .cart-panel { transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1); }
+        .header-banner-img { filter: blur(2px) brightness(0.7); background-size: cover; background-position: center; }
+        .header-gradient { background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <div id="header-banner" class="header-banner-img h-56 w-full relative">
+        <div class="absolute inset-0 header-gradient"></div>
+    </div>
+
+    <header class="max-w-md mx-auto -mt-14 relative z-20 px-4">
+        <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-50 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-14 h-14 bg-slate-900 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl">
+                    <i id="shop-icon" class="fas fa-store"></i>
+                </div>
+                <div>
+                    <h1 id="shop-name" class="font-black text-slate-800 text-lg uppercase tracking-tighter italic leading-none">Cargando...</h1>
+                    <div class="flex items-center space-x-2 mt-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <p id="bcv-rate" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tasa BCV: --</p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="toggleCart()" class="relative w-14 h-14 bg-blue-50 rounded-[1.5rem] flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm active:scale-90 transition-all">
+                <i class="fas fa-shopping-cart text-xl"></i>
+                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-black hidden shadow-md">0</span>
+            </button>
+        </div>
+    </header>
+
+    <section class="max-w-md mx-auto px-4 mt-6">
+        <div class="relative w-full mb-4">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-search text-slate-300"></i>
+            </div>
+            <input type="text" onkeyup="buscarProducto(this.value)" placeholder="Buscar producto..." class="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-[1.5rem] pl-10 pr-4 py-4 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+        </div>
+        <div id="category-filters" class="flex overflow-x-auto space-x-2 no-scrollbar py-1"></div>
+    </section>
+
+    <main id="product-list" class="max-w-md mx-auto p-4 mt-2"></main>
+
+    <div id="cart-view" class="cart-panel fixed inset-0 z-50 bg-white translate-y-full flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center">
+            <button onclick="toggleCart()" class="w-12 h-12 bg-slate-50 rounded-2xl text-slate-400"><i class="fas fa-times"></i></button>
+            <h2 class="font-black text-slate-800 uppercase italic">Tu Carrito</h2>
+            <button onclick="vaciarCarrito()" class="w-12 h-12 bg-red-50 rounded-2xl text-red-500"><i class="fas fa-trash-alt"></i></button>
+        </div>
+        
+        <div id="cart-items" class="flex-1 overflow-y-auto p-6 bg-slate-50/50"></div>
+        
+        <div class="p-8 bg-white border-t rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
+            <h3 id="titulo-metodos" class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4">MÉTODO DE ENTREGA</h3>
+            <div id="metodos-entrega-container"></div>
+            <input type="text" id="mesa-input" placeholder="Datos extra..." class="w-full bg-slate-50 border-none p-5 rounded-2xl text-xs mb-6 focus:ring-2 focus:ring-blue-500">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</p>
+                    <p class="text-4xl font-black text-slate-900 leading-none tracking-tighter">$<span id="total-usd">0.00</span></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-black text-blue-600 tracking-tighter"><span id="total-bs">0,00</span> Bs.</p>
+                </div>
+            </div>
+            <button onclick="enviarPedido()" class="w-full bg-green-500 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-3 active:scale-95 transition-all">
+                <i class="fab fa-whatsapp text-2xl"></i>
+                <span>Confirmar y Enviar</span>
+            </button>
+        </div>
+    </div>
+
+    <footer class="p-10 text-center">
+        <span class="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">Digitaliza Urpín 2026</span>
+    </footer>
+
 </body>
 </html>
