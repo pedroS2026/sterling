@@ -195,7 +195,7 @@
         window.buscar = (t) => { busquedaActual = t.toLowerCase(); renderInterface(); };
         window.toggleCart = () => document.getElementById('cart-view').classList.toggle('translate-y-full');
 
-        // --- LÓGICA DE WHATSAPP DIRECTA SOLICITADA ---
+        // --- LÓGICA DE WHATSAPP CON INTENT PARA ANDROID ---
         window.enviarWhatsApp = () => {
             if (carrito.length === 0) return;
             
@@ -224,9 +224,24 @@
             texto += `\n_Enviado desde Digitaliza Urpín_`;
 
             const phone = (configNegocio.whatsapp || '584266662491').replace(/\D/g, '');
+            const encodedText = encodeURIComponent(texto);
             
-            // USO DEL PROTOCOLO whatsapp://send PARA ENVÍO DIRECTO
-            const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(texto)}`;
+            // Detectar el dispositivo para forzar la apertura correcta
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            
+            let url = "";
+            
+            if (isAndroid) {
+                // El Intent específico de Android que ignora a Chrome y va directo a WhatsApp
+                url = `intent://send?phone=${phone}&text=${encodedText}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+            } else if (isIOS) {
+                // En iPhone, el protocolo whatsapp:// es el estándar directo
+                url = `whatsapp://send?phone=${phone}&text=${encodedText}`;
+            } else {
+                // Para tu ThinkPad X61 u otras PCs (Abre WhatsApp Web)
+                url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedText}`;
+            }
             
             window.location.href = url;
         };
