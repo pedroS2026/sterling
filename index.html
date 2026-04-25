@@ -310,13 +310,21 @@
                     texto += tipoNegocio === 'retail' ? `*NOTAS/DIRECCIÓN:* ${extrasInfo}` : `*MESA/DIR:* ${extrasInfo}`;
                 }
 
-                const url = `https://wa.me/${TELEFONO_WHATSAPP}?text=${encodeURIComponent(texto)}`;
+                // 📱 DETECCIÓN DE MÓVIL PARA FORZAR LA APP DIRECTAMENTE
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                 
-                // Redirección directa para evitar bloqueos
+                // Si es móvil usa whatsapp:// (salto directo a la app sin preguntar por Chrome)
+                // Si es PC (como tu X61) usa api.whatsapp (abre WhatsApp Web)
+                const url = isMobile 
+                    ? `whatsapp://send?phone=${TELEFONO_WHATSAPP}&text=${encodeURIComponent(texto)}` 
+                    : `https://api.whatsapp.com/send?phone=${TELEFONO_WHATSAPP}&text=${encodeURIComponent(texto)}`;
+                
+                // Redirección directa al sistema
                 window.location.href = url;
             } catch (e) {
                 console.error("Error al enviar pedido:", e);
-                window.location.href = "https://wa.me/" + TELEFONO_WHATSAPP;
+                // Fallback seguro usando esquema de app
+                window.location.href = `whatsapp://send?phone=${TELEFONO_WHATSAPP}`;
             }
         };
     </script>
