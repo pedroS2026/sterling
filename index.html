@@ -12,6 +12,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
             authDomain: "digitaliza-urpin.firebaseapp.com",
@@ -35,11 +36,10 @@
         let configNegocio = {};
 
         const DEFAULT_DATA = {
-            business: { name: "Digitaliza", accent: "Urpín", type: "food", whatsapp: "584266662491" },
+            business: { name: "Digitaliza", accent: "Urpín", type: "parts", whatsapp: "584266662491" },
             products: [
-                { id: 1, name: "Hamburguesa Especial", price: 8.50, category: "Hamburguesas", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500" },
-                { id: 2, name: "Papas Fritas XL", price: 4.00, category: "Complementos", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500" },
-                { id: 3, name: "Refresco Familiar", price: 2.50, category: "Bebidas", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500" }
+                { id: 1, name: "Alternador Universal", price: 85.00, category: "Eléctrico", img: "https://images.unsplash.com/photo-1635773054018-208260655383?w=500" },
+                { id: 2, name: "Pastillas de Freno", price: 25.00, category: "Frenos", img: "https://images.unsplash.com/photo-1486006396193-471d6f58c6ca?w=500" }
             ]
         };
 
@@ -56,7 +56,8 @@
                 const data = await response.json();
                 if (data?.rates?.VES) {
                     TASA_BCV = data.rates.VES;
-                    document.getElementById('bcv-rate').innerText = `BCV: ${TASA_BCV.toFixed(2)} Bs.`;
+                    const bcvEl = document.getElementById('bcv-rate');
+                    if (bcvEl) bcvEl.innerText = `BCV: ${TASA_BCV.toFixed(2)} Bs.`;
                 }
             } catch (e) { console.log("Tasa manual activa"); }
         }
@@ -130,7 +131,6 @@
             `).join('');
         }
 
-        // --- FUNCIONES DEL CARRITO (CON LIMPIEZA) ---
         window.add = (id) => {
             const p = productosData.find(x => x.id === id);
             const item = carrito.find(x => x.id === id);
@@ -147,7 +147,7 @@
         window.limpiarCarrito = () => {
             carrito = [];
             updateCart();
-            toggleCart(); // Cerrar al limpiar
+            toggleCart();
         };
 
         window.updateCart = () => {
@@ -188,8 +188,6 @@
 
             document.getElementById('total-usd').innerText = total.toFixed(2);
             document.getElementById('total-bs').innerText = (total * TASA_BCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
-            
-            // Mostrar/Ocultar botón de limpieza
             document.getElementById('btn-clear-all').classList.toggle('hidden', carrito.length === 0);
         };
 
@@ -197,16 +195,40 @@
         window.buscar = (t) => { busquedaActual = t.toLowerCase(); renderInterface(); };
         window.toggleCart = () => document.getElementById('cart-view').classList.toggle('translate-y-full');
 
+        // --- LÓGICA DE WHATSAPP DIRECTA SOLICITADA ---
         window.enviarWhatsApp = () => {
             if (carrito.length === 0) return;
+            
             const extra = document.getElementById('extra-info').value;
-            const label = temas[configNegocio.type || 'food']?.label || 'Pedido';
-            let msg = `*NUEVA ${label.toUpperCase()}*\n\n`;
-            carrito.forEach(i => msg += `• ${i.qty}x ${i.name} ($${(i.price * i.qty).toFixed(2)})\n`);
-            msg += `\n*TOTAL:* $${document.getElementById('total-usd').innerText}`;
-            msg += `\n*BS:* ${document.getElementById('total-bs').innerText} Bs.`;
-            if(extra) msg += `\n\n*CLIENTE:* ${extra}`;
-            window.open(`https://wa.me/${configNegocio.whatsapp || '584266662491'}?text=${encodeURIComponent(msg)}`, '_blank');
+            const tipo = configNegocio.type || 'food';
+            const label = temas[tipo]?.label || 'Pedido';
+            const totalUSD = document.getElementById('total-usd').innerText;
+            const totalBS = document.getElementById('total-bs').innerText;
+            
+            let texto = `*NUEVA ${label.toUpperCase()}*\n`;
+            texto += `----------------------------\n`;
+            
+            carrito.forEach(item => {
+                texto += `✅ *${item.qty}x* ${item.name.toUpperCase()}\n`;
+                texto += `   Sub: $${(item.price * item.qty).toFixed(2)}\n`;
+            });
+            
+            texto += `----------------------------\n`;
+            texto += `*TOTAL:* $${totalUSD}\n`;
+            texto += `*BS:* ${totalBS} Bs.\n`;
+            
+            if (extra) {
+                texto += `\n*CLIENTE/REF:* ${extra}\n`;
+            }
+            
+            texto += `\n_Enviado desde Digitaliza Urpín_`;
+
+            const phone = (configNegocio.whatsapp || '584266662491').replace(/\D/g, '');
+            
+            // USO DEL PROTOCOLO whatsapp://send PARA ENVÍO DIRECTO
+            const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(texto)}`;
+            
+            window.location.href = url;
         };
     </script>
 
@@ -220,34 +242,34 @@
 </head>
 <body class="max-w-md mx-auto bg-slate-50 min-h-screen relative overflow-x-hidden">
 
-    <!-- Header Principal -->
+    <!-- Header -->
     <header id="main-header" class="bg-slate-900 p-6 pt-10 rounded-b-[2.5rem] text-white">
         <div class="flex justify-between items-center mb-8">
             <div>
-                <h1 id="shop-name" class="text-2xl font-black italic tracking-tighter uppercase leading-none italic">
+                <h1 id="shop-name" class="text-2xl font-black italic tracking-tighter uppercase leading-none">
                     Cargando...
                 </h1>
                 <p id="bcv-rate" class="text-[9px] font-bold text-slate-500 tracking-[0.2em] mt-2 uppercase">BCV: --</p>
             </div>
             <button onclick="toggleCart()" class="relative w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 active:scale-90 transition-all">
                 <i id="cart-icon" class="fas fa-shopping-cart text-xl"></i>
-                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black hidden shadow-lg animate-bounce">0</span>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black hidden shadow-lg">0</span>
             </button>
         </div>
         
         <div class="relative">
             <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-            <input type="text" onkeyup="buscar(this.value)" placeholder="¿Qué estás buscando?" class="w-full bg-white/5 border border-white/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-xs text-white focus:bg-white/10 outline-none transition-all">
+            <input type="text" onkeyup="buscar(this.value)" placeholder="¿Qué necesitas?" class="w-full bg-white/5 border border-white/10 rounded-[1.2rem] py-4 pl-12 pr-4 text-xs text-white focus:bg-white/10 outline-none transition-all">
         </div>
     </header>
 
     <!-- Filtros -->
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-6 py-6"></div>
 
-    <!-- Lista de Productos -->
+    <!-- Lista -->
     <main id="product-list" class="px-6 pb-32"></main>
 
-    <!-- Modal Carrito (Full Screen Mobile Style) -->
+    <!-- Carrito View -->
     <div id="cart-view" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
         <div class="w-full max-w-md mx-auto bg-white rounded-t-[3rem] flex flex-col max-h-[92vh] shadow-2xl">
             
@@ -255,7 +277,7 @@
                 <div class="flex flex-col">
                     <h2 id="modal-title" class="font-black text-xl text-slate-800 uppercase italic leading-none">Tu Pedido</h2>
                     <button id="btn-clear-all" onclick="limpiarCarrito()" class="text-[9px] font-black text-red-500 uppercase tracking-widest mt-2 hidden">
-                        <i class="fas fa-broom mr-1"></i> Vaciar Carrito
+                        <i class="fas fa-broom mr-1"></i> Limpiar Todo
                     </button>
                 </div>
                 <button onclick="toggleCart()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
@@ -263,32 +285,29 @@
                 </button>
             </div>
             
-            <div id="cart-items" class="flex-1 px-8 overflow-y-auto no-scrollbar">
-                <!-- Items se cargan aquí -->
-            </div>
+            <div id="cart-items" class="flex-1 px-8 overflow-y-auto no-scrollbar"></div>
             
             <div class="p-8 pt-4 bg-white border-t border-slate-100 rounded-t-[2rem]">
-                <input id="extra-info" type="text" placeholder="Nombre, mesa o referencia..." class="w-full bg-slate-50 p-4 rounded-2xl text-xs font-bold mb-6 border border-slate-100 outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+                <input id="extra-info" type="text" placeholder="Nombre o referencia de contacto..." class="w-full bg-slate-50 p-4 rounded-2xl text-xs font-bold mb-6 border border-slate-100 outline-none focus:ring-2 focus:ring-slate-900">
                 
                 <div class="flex justify-between items-end mb-8">
                     <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 leading-none">Total</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
                         <p class="text-4xl font-black text-slate-900 tracking-tighter leading-none">$<span id="total-usd">0.00</span></p>
                     </div>
                     <p class="text-lg font-black text-slate-300 italic"><span id="total-bs">0,00</span> Bs.</p>
                 </div>
                 
-                <button onclick="enviarWhatsApp()" class="w-full bg-green-500 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.15em] text-[11px] flex items-center justify-center space-x-3 shadow-xl shadow-green-100 active:scale-95 transition-all">
+                <button onclick="enviarWhatsApp()" class="w-full bg-green-500 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.15em] text-[11px] flex items-center justify-center space-x-3 shadow-xl active:scale-95 transition-all">
                     <i class="fab fa-whatsapp text-xl"></i>
-                    <span id="btn-send-text">Confirmar</span>
+                    <span id="btn-send-text">Enviar WhatsApp</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="text-center p-8 text-slate-300 text-[9px] font-black uppercase tracking-[0.4em]">
-        Digitaliza Urpín • Sistema Universal
+        Digitaliza Urpín • 2024
     </footer>
 
 </body>
