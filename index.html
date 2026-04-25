@@ -24,13 +24,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // =========================================================================
-        // 🟢 MAGIA AQUÍ: LEER EL ID DEL CLIENTE DESDE LA URL DEL QR
-        // =========================================================================
         const urlParams = new URLSearchParams(window.location.search);
-        const CLIENTE_ID = urlParams.get('id') || "burger_demo"; // Si no hay ID, carga burger_demo por defecto
+        const CLIENTE_ID = urlParams.get('id') || "burger_demo"; 
         
-        let TELEFONO_WHATSAPP = ""; // Ahora se llena automáticamente desde Firebase
+        let TELEFONO_WHATSAPP = ""; 
         let TASA_BCV = 49.00; 
         const IMAGEN_BANNER = "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=60";
         
@@ -62,15 +59,11 @@
 
         actualizarTasaAutomatica();
 
-        // Escucha de datos en tiempo real (Firebase)
         onSnapshot(doc(db, "clientes", CLIENTE_ID), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 productosData = data.products || [];
-                
-                // 🟢 OBTENEMOS EL WHATSAPP ESPECÍFICO DE ESTE NEGOCIO
                 TELEFONO_WHATSAPP = data.business?.whatsapp || "580000000000";
-                
                 renderMenu(data);
             } else {
                 document.getElementById('shop-name').innerHTML = `Negocio <span class="text-red-500">No Encontrado</span>`;
@@ -78,7 +71,6 @@
             }
         });
 
-        // DIBUJAR INTERFAZ PRINCIPAL
         function renderMenu(data) {
             const biz = data.business || { name: 'Catálogo', accent: 'Digital', icon: 'fa-store', type: 'food' };
             tipoNegocio = biz.type || 'food'; 
@@ -193,12 +185,15 @@
 
         function actualizarUI() {
             const totalItems = carrito.reduce((acc, item) => acc + item.qty, 0);
-            cartCount.innerText = totalItems;
-            cartCount.classList.toggle('hidden', totalItems === 0);
+            if(cartCount) {
+                cartCount.innerText = totalItems;
+                cartCount.classList.toggle('hidden', totalItems === 0);
+            }
             renderCart();
         }
 
         function renderCart() {
+            if(!cartItemsContainer) return;
             cartItemsContainer.innerHTML = "";
             let total = 0;
             if (carrito.length === 0) {
@@ -225,22 +220,23 @@
                     </div>
                 `;
             });
-            totalUsdText.innerText = total.toFixed(2);
-            totalBsText.innerText = (total * TASA_BCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+            if(totalUsdText) totalUsdText.innerText = total.toFixed(2);
+            if(totalBsText) totalBsText.innerText = (total * TASA_BCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
         }
 
         window.toggleCart = () => {
-            cartView.classList.toggle('translate-y-full');
+            if(cartView) cartView.classList.toggle('translate-y-full');
         };
 
         function configurarMetodosEntrega() {
             const containerMetodos = document.getElementById('metodos-entrega-container');
             const tituloMetodos = document.getElementById('titulo-metodos');
             const inputExtra = document.getElementById('mesa-input');
-            
+            if(!containerMetodos) return;
+
             if (tipoNegocio === 'retail') {
-                tituloMetodos.innerText = "¿Cómo deseas recibir tu compra?";
-                inputExtra.placeholder = "Indica tu dirección o datos de quien retira";
+                if(tituloMetodos) tituloMetodos.innerText = "¿Cómo deseas recibir tu compra?";
+                if(inputExtra) inputExtra.placeholder = "Indica tu dirección o datos de quien retira";
                 containerMetodos.innerHTML = `
                     <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                         <input type="radio" name="metodo" value="retiro" checked class="hidden">
@@ -255,8 +251,8 @@
                 `;
                 containerMetodos.className = "grid grid-cols-2 gap-3 mb-6";
             } else {
-                tituloMetodos.innerText = "¿Cómo recibes tu pedido?";
-                inputExtra.placeholder = "Mesa o Dirección";
+                if(tituloMetodos) tituloMetodos.innerText = "¿Cómo recibes tu pedido?";
+                if(inputExtra) inputExtra.placeholder = "Mesa o Dirección";
                 containerMetodos.innerHTML = `
                     <label class="flex flex-col items-center p-4 bg-slate-50 rounded-[1.5rem] border-2 border-transparent cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                         <input type="radio" name="metodo" value="mesa" checked class="hidden">
@@ -278,34 +274,56 @@
             }
         }
 
+        // =========================================================================
+        // 🚀 BOTÓN WHATSAPP CON NÚMERO DE ORDEN GENERADO
+        // =========================================================================
         window.enviarPedido = () => {
-            if (carrito.length === 0) return;
-            const metodo = document.querySelector('input[name="metodo"]:checked').value;
-            const extrasInfo = document.getElementById('mesa-input').value;
-            
-            let texto = tipoNegocio === 'retail' ? `*NUEVA COTIZACIÓN/ORDEN*\n` : `*NUEVO PEDIDO*\n`;
-            texto += `--------------------------\n`;
-            
-            carrito.forEach(item => { 
-                texto += `• ${item.qty}x ${item.name} ($${(item.price * item.qty).toFixed(2)})\n`; 
-            });
-            
-            texto += `--------------------------\n`;
-            texto += `*TOTAL:* $${totalUsdText.innerText} (${totalBsText.innerText} Bs.)\n`;
-            texto += `*MÉTODO:* ${metodo.toUpperCase()}\n`;
-            
-            if (extrasInfo) {
-                texto += tipoNegocio === 'retail' ? `*NOTAS/DIRECCIÓN:* ${extrasInfo}` : `*MESA/DIR:* ${extrasInfo}`;
-            }
+            try {
+                if (carrito.length === 0) return;
+                
+                // Generar un número de orden único de 6 caracteres
+                const numeroOrden = Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                // Obtener el método seleccionado de forma segura
+                const radioChecked = document.querySelector('input[name="metodo"]:checked');
+                const metodo = radioChecked ? radioChecked.value : "NO ESPECIFICADO";
+                
+                const extrasInput = document.getElementById('mesa-input');
+                const extrasInfo = extrasInput ? extrasInput.value : "";
+                
+                let texto = tipoNegocio === 'retail' ? `*NUEVA COTIZACIÓN/ORDEN*\n` : `*NUEVO PEDIDO*\n`;
+                texto += `*ORDEN N°:* ${numeroOrden}\n`;
+                texto += `--------------------------\n`;
+                
+                carrito.forEach(item => { 
+                    texto += `• ${item.qty}x ${item.name} ($${(item.price * item.qty).toFixed(2)})\n`; 
+                });
+                
+                const totalUSD = totalUsdText ? totalUsdText.innerText : "0.00";
+                const totalBS = totalBsText ? totalBsText.innerText : "0,00";
 
-            const url = `https://wa.me/${TELEFONO_WHATSAPP}?text=${encodeURIComponent(texto)}`;
-            window.open(url, '_blank');
+                texto += `--------------------------\n`;
+                texto += `*TOTAL:* $${totalUSD} (${totalBS} Bs.)\n`;
+                texto += `*MÉTODO:* ${metodo.toUpperCase()}\n`;
+                
+                if (extrasInfo) {
+                    texto += tipoNegocio === 'retail' ? `*NOTAS/DIRECCIÓN:* ${extrasInfo}` : `*MESA/DIR:* ${extrasInfo}`;
+                }
+
+                const url = `https://wa.me/${TELEFONO_WHATSAPP}?text=${encodeURIComponent(texto)}`;
+                
+                // Redirección directa para evitar bloqueos
+                window.location.href = url;
+            } catch (e) {
+                console.error("Error al enviar pedido:", e);
+                window.location.href = "https://wa.me/" + TELEFONO_WHATSAPP;
+            }
         };
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; -webkit-tap-highlight-color: transparent; }
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
         .cart-panel { transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1); }
         .header-banner-img { filter: blur(2px) brightness(0.7); background-size: cover; background-position: center; }
@@ -375,6 +393,7 @@
                     <p class="text-xl font-black text-blue-600 tracking-tighter"><span id="total-bs">0,00</span> Bs.</p>
                 </div>
             </div>
+            <!-- Botón blindado -->
             <button onclick="enviarPedido()" class="w-full bg-green-500 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-3 active:scale-95 transition-all">
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span>Confirmar y Enviar</span>
