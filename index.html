@@ -11,6 +11,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // Configuración de Firebase (Se mantiene igual)
         const firebaseConfig = {
@@ -24,6 +25,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         const params = new URLSearchParams(window.location.search);
         const CLIENTE_ID = params.get('id') || "demo"; 
@@ -65,23 +67,26 @@
             } catch (e) { console.log("Tasa manual activa"); }
         }
 
-        // --- CAMBIO CLAVE: RUTA DE FIRESTORE ACTUALIZADA ---
-        const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
+        // --- CAMBIO CLAVE: AUTENTICACIÓN ANÓNIMA OBLIGATORIA ---
+        signInAnonymously(auth).then(() => {
+            const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
 
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                productosData = data.products || [];
-                configNegocio = data.business || {};
-            } else {
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    productosData = data.products || [];
+                    configNegocio = data.business || {};
+                } else {
+                    productosData = DEFAULT_DATA.products;
+                    configNegocio = DEFAULT_DATA.business;
+                }
+                renderInterface();
+            }, (error) => {
+                console.error("Error leyendo Firebase:", error);
                 productosData = DEFAULT_DATA.products;
                 configNegocio = DEFAULT_DATA.business;
-            }
-            renderInterface();
-        }, (error) => {
-            productosData = DEFAULT_DATA.products;
-            configNegocio = DEFAULT_DATA.business;
-            renderInterface();
+                renderInterface();
+            });
         });
 
         function renderInterface() {
@@ -138,7 +143,6 @@
         }
 
         window.add = (id) => {
-            // Se asegura de comparar IDs como Strings para evitar errores de tipo
             const p = productosData.find(x => String(x.id) === String(id));
             if (!p) return;
             const item = carrito.find(x => String(x.id) === String(id));
@@ -233,18 +237,7 @@
             const phone = (configNegocio.whatsapp || '584266662491').replace(/\D/g, '');
             const encodedText = encodeURIComponent(texto);
             
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            
-            let url = "";
-            if (isAndroid) {
-                url = `intent://send?phone=${phone}&text=${encodedText}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
-            } else if (isIOS) {
-                url = `whatsapp://send?phone=${phone}&text=${encodedText}`;
-            } else {
-                url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedText}`;
-            }
-            
+            const url = `https://wa.me/${phone}?text=${encodedText}`;
             window.location.href = url;
         };
     </script>
