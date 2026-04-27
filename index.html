@@ -11,9 +11,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // Configuración de Firebase (Se mantiene igual)
+        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
             authDomain: "digitaliza-urpin.firebaseapp.com",
@@ -25,7 +24,6 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
 
         const params = new URLSearchParams(window.location.search);
         const CLIENTE_ID = params.get('id') || "demo"; 
@@ -43,8 +41,7 @@
         const DEFAULT_DATA = {
             business: { name: "Digitaliza", accent: "Urpín", type: "parts", whatsapp: "584266662491" },
             products: [
-                { id: 1, name: "Alternador Universal", price: 85.00, category: "Eléctrico", img: "https://images.unsplash.com/photo-1635773054018-208260655383?w=500" },
-                { id: 2, name: "Pastillas de Freno", price: 25.00, category: "Frenos", img: "https://images.unsplash.com/photo-1486006396193-471d6f58c6ca?w=500" }
+                { id: 1, name: "Producto de Ejemplo", price: 0.00, category: "General", img: "" }
             ]
         };
 
@@ -67,26 +64,29 @@
             } catch (e) { console.log("Tasa manual activa"); }
         }
 
-        // --- CAMBIO CLAVE: AUTENTICACIÓN ANÓNIMA OBLIGATORIA ---
-        signInAnonymously(auth).then(() => {
-            const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
+        // RUTA DE FIRESTORE DINÁMICA SEGÚN EL QR
+        const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
 
-            onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    productosData = data.products || [];
-                    configNegocio = data.business || {};
-                } else {
-                    productosData = DEFAULT_DATA.products;
-                    configNegocio = DEFAULT_DATA.business;
-                }
-                renderInterface();
-            }, (error) => {
-                console.error("Error leyendo Firebase:", error);
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                productosData = data.products || [];
+                configNegocio = data.business || {};
+                
+                // Ocultar loader si existe
+                const loader = document.getElementById('loader-global');
+                if(loader) loader.style.display = 'none';
+            } else {
+                console.log("No se encontró el documento, cargando demo...");
                 productosData = DEFAULT_DATA.products;
                 configNegocio = DEFAULT_DATA.business;
-                renderInterface();
-            });
+            }
+            renderInterface();
+        }, (error) => {
+            console.error("Error cargando Firestore:", error);
+            productosData = DEFAULT_DATA.products;
+            configNegocio = DEFAULT_DATA.business;
+            renderInterface();
         });
 
         function renderInterface() {
@@ -94,7 +94,7 @@
             const tema = temas[tipo] || temas.food;
             
             document.getElementById('main-header').className = `p-6 pt-10 rounded-b-[2.5rem] shadow-2xl text-white relative transition-all bg-${tema.bg}`;
-            document.getElementById('shop-name').innerHTML = `${configNegocio.name} <span class="text-${tema.primary}">${configNegocio.accent}</span>`;
+            document.getElementById('shop-name').innerHTML = `${configNegocio.name || 'Digitaliza'} <span class="text-${tema.primary}">${configNegocio.accent || 'Urpín'}</span>`;
             document.getElementById('cart-icon').className = `fas ${tema.icon} text-${tema.primary}`;
             
             document.getElementById('modal-title').innerText = `Tu ${tema.label}`;
@@ -124,17 +124,18 @@
             });
 
             container.innerHTML = filtrados.map(p => `
-                <div class="bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100 flex items-center mb-4 active:scale-95 transition-all">
-                    <img src="${p.img}" class="w-20 h-20 rounded-2xl object-cover" onerror="this.src='https://placehold.co/200x200?text=${p.name}'">
+                <div class="bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100 flex items-center mb-4 active:scale-95 transition-all animate-slide-up">
+                    <img src="${p.img}" class="w-20 h-20 rounded-2xl object-cover bg-slate-50" onerror="this.src='https://placehold.co/200x200?text=${p.name}'">
                     <div class="ml-4 flex-1">
                         <h3 class="text-[11px] font-black text-slate-800 uppercase tracking-tight">${p.name}</h3>
-                        <div class="flex justify-between items-end mt-2">
+                        <p class="text-[8px] font-bold text-slate-400 uppercase mb-1">${p.category}</p>
+                        <div class="flex justify-between items-end mt-1">
                             <div>
                                 <span class="text-lg font-black text-slate-900">$${p.price.toFixed(2)}</span>
                                 <span class="block text-[9px] font-bold text-slate-400 uppercase leading-none">${(p.price * TASA_BCV).toFixed(2)} Bs.</span>
                             </div>
                             <button onclick="add('${p.id}')" class="bg-${tema.primary} text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-md">
-                                <i class="fas fa-plus"></i>
+                                <i class="fas fa-plus text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -237,7 +238,18 @@
             const phone = (configNegocio.whatsapp || '584266662491').replace(/\D/g, '');
             const encodedText = encodeURIComponent(texto);
             
-            const url = `https://wa.me/${phone}?text=${encodedText}`;
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            
+            let url = "";
+            if (isAndroid) {
+                url = `intent://send?phone=${phone}&text=${encodedText}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+            } else if (isIOS) {
+                url = `whatsapp://send?phone=${phone}&text=${encodedText}`;
+            } else {
+                url = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedText}`;
+            }
+            
             window.location.href = url;
         };
     </script>
@@ -248,16 +260,34 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Loader simple */
+        #loader-global {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="max-w-md mx-auto bg-slate-50 min-h-screen relative overflow-x-hidden">
+
+    <!-- Loader Inicial -->
+    <div id="loader-global">
+        <div class="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
+        <p class="text-[10px] font-black uppercase tracking-widest mt-4 text-slate-400">Sincronizando...</p>
+    </div>
 
     <!-- Header -->
     <header id="main-header" class="bg-slate-900 p-6 pt-10 rounded-b-[2.5rem] text-white">
         <div class="flex justify-between items-center mb-8">
             <div>
                 <h1 id="shop-name" class="text-2xl font-black italic tracking-tighter uppercase leading-none">
-                    Cargando...
+                    Digitaliza <span class="text-blue-500">Urpín</span>
                 </h1>
                 <p id="bcv-rate" class="text-[9px] font-bold text-slate-500 tracking-[0.2em] mt-2 uppercase">BCV: --</p>
             </div>
