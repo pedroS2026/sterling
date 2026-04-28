@@ -60,11 +60,17 @@
                     TASA_BCV = data.rates.VES;
                     const bcvEl = document.getElementById('bcv-rate');
                     if (bcvEl) bcvEl.innerText = `BCV: ${TASA_BCV.toFixed(2)} Bs.`;
+                    
+                    // Repintar para aplicar la nueva tasa a los precios mostrados
+                    if (configNegocio.type) {
+                        renderProductos(temas[configNegocio.type] || temas.food);
+                        updateCart();
+                    }
                 }
             } catch (e) { console.log("Tasa manual activa"); }
         }
 
-        // RUTA DE FIRESTORE DINÁMICA SEGÚN EL QR
+        // RUTA DE FIRESTORE DINÁMICA
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
 
         onSnapshot(docRef, (docSnap) => {
@@ -73,7 +79,6 @@
                 productosData = data.products || [];
                 configNegocio = data.business || {};
                 
-                // Ocultar loader si existe
                 const loader = document.getElementById('loader-global');
                 if(loader) loader.style.display = 'none';
             } else {
@@ -261,7 +266,6 @@
         .animate-slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* Loader simple */
         #loader-global {
             position: fixed;
             inset: 0;
@@ -276,13 +280,11 @@
 </head>
 <body class="max-w-md mx-auto bg-slate-50 min-h-screen relative overflow-x-hidden">
 
-    <!-- Loader Inicial -->
     <div id="loader-global">
         <div class="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
         <p class="text-[10px] font-black uppercase tracking-widest mt-4 text-slate-400">Sincronizando...</p>
     </div>
 
-    <!-- Header -->
     <header id="main-header" class="bg-slate-900 p-6 pt-10 rounded-b-[2.5rem] text-white">
         <div class="flex justify-between items-center mb-8">
             <div>
@@ -303,13 +305,10 @@
         </div>
     </header>
 
-    <!-- Filtros -->
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-6 py-6"></div>
 
-    <!-- Lista -->
     <main id="product-list" class="px-6 pb-32"></main>
 
-    <!-- Carrito View -->
     <div id="cart-view" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
         <div class="w-full max-w-md mx-auto bg-white rounded-t-[3rem] flex flex-col max-h-[92vh] shadow-2xl">
             
@@ -347,7 +346,7 @@
     </div>
 
     <footer class="text-center p-8 text-slate-300 text-[9px] font-black uppercase tracking-[0.4em]">
-        Digitaliza Urpín • 2024
+        Digitaliza Urpín • 2026
     </footer>
 
 </body>
