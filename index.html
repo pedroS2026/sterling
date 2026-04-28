@@ -14,7 +14,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Configuración de Firebase
+        // Configuración de Firebase (Verificada con tus capturas)
         const firebaseConfig = {
             apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
             authDomain: "digitaliza-urpin.firebaseapp.com",
@@ -27,9 +27,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Variables de Estado Global - AJUSTE ESCENCIAL PARA QR
+        // Identificación del Cliente vía URL (ej: index.html?id=estermendoza)
         const params = new URLSearchParams(window.location.search);
         const CLIENTE_ID = params.get('id') || "demo"; 
+        
+        // APP_ID según tu captura de Firestore
         const APP_ID = "digitaliza-urpin-2026"; 
         
         let TASA_BCV = 49.50; 
@@ -56,16 +58,25 @@
                     if (bcvEl) bcvEl.innerText = `TASA BCV: ${TASA_BCV.toFixed(2)} BS.`;
                     renderInterface(); 
                 }
-            } catch (error) { console.error("Error tasa:", error); }
+            } catch (error) { console.error("Error obteniendo tasa:", error); }
         }
 
-        // Listener de Datos - AJUSTE DE RUTA ESCENCIAL
+        /**
+         * AJUSTE DE RUTA SEGÚN CAPTURA DE FIRESTORE:
+         * Colección: artifacts
+         * Documento: digitaliza-urpin-2026 (APP_ID)
+         * Sub-colección: public
+         * Documento: data
+         * Sub-colección: clientes
+         * Documento: CLIENTE_ID (ej: estermendoza)
+         */
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
 
         onSnapshot(docRef, (docSnap) => {
             const loader = document.getElementById('loader-global');
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                // Verificamos que los campos 'products' y 'business' existan en el documento
                 productosData = data.products || [];
                 configNegocio = data.business || {};
                 
@@ -75,13 +86,18 @@
                 }
                 renderInterface();
             } else {
-                // Manejo de ID no encontrado
+                console.error("Documento no encontrado en ruta:", docRef.path);
                 if (loader) loader.style.display = 'none';
-                document.getElementById('shop-name').innerHTML = `<span class="text-red-500 text-sm">ID: ${CLIENTE_ID} NO REGISTRADO</span>`;
-                document.getElementById('product-list').innerHTML = `<div class="py-20 text-center uppercase font-black text-slate-300 text-[10px]">Verifica el enlace del QR</div>`;
+                document.getElementById('shop-name').innerHTML = `<span class="text-red-500 text-sm">CLIENTE NO ENCONTRADO</span>`;
+                document.getElementById('product-list').innerHTML = `
+                    <div class="py-20 text-center uppercase font-black text-slate-300 text-[10px]">
+                        ID: "${CLIENTE_ID}" no existe en la base de datos.<br>
+                        Verifica la ruta en Firestore.
+                    </div>`;
             }
         }, (error) => {
-            console.error("Error Firestore:", error);
+            console.error("Error de Permisos o Conexión Firestore:", error);
+            if (loader) loader.style.display = 'none';
         });
 
         function renderInterface() {
@@ -89,7 +105,11 @@
             const tema = temas[tipo] || temas.food;
             
             const header = document.getElementById('main-header');
-            if (header) header.style.backgroundColor = tema.bg === 'slate-900' ? '#0f172a' : (tema.bg === 'stone-900' ? '#1c1917' : '#18181b');
+            if (header) {
+                // Colores de fondo según el tema
+                const bgColors = { 'slate-900': '#0f172a', 'stone-900': '#1c1917', 'zinc-900': '#18181b' };
+                header.style.backgroundColor = bgColors[tema.bg] || '#0f172a';
+            }
 
             const shopName = document.getElementById('shop-name');
             if (shopName) shopName.innerHTML = `${configNegocio.name || 'Digitaliza'} <span class="text-${tema.primary}">${configNegocio.accent || 'Urpín'}</span>`;
@@ -110,7 +130,7 @@
             const categoriasUnicas = ["Todas", ...new Set(productosData.map(p => p.category))];
             container.innerHTML = categoriasUnicas.map(cat => `
                 <button onclick="window.filtrar('${cat}')" 
-                    class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all 
+                    class="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
                     ${categoriaActual === cat ? `bg-${tema.primary} text-white shadow-lg` : 'bg-white text-slate-400 border border-slate-100'}">
                     ${cat}
                 </button>
@@ -122,7 +142,7 @@
             const filtrados = productosData.filter(p => (categoriaActual === "Todas" || p.category === categoriaActual) && p.name.toLowerCase().includes(busquedaActual.toLowerCase()));
 
             if (filtrados.length === 0) {
-                container.innerHTML = `<div class="py-20 text-center text-slate-300 text-[10px] font-bold uppercase">No se encontraron resultados</div>`;
+                container.innerHTML = `<div class="py-20 text-center text-slate-300 text-[10px] font-bold uppercase">No hay productos disponibles</div>`;
                 return;
             }
 
@@ -226,11 +246,13 @@
 </head>
 <body class="max-w-md mx-auto bg-slate-50 min-h-screen relative overflow-x-hidden">
 
+    <!-- Pantalla de Carga -->
     <div id="loader-global" class="fixed inset-0 bg-white z-[1000] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin"></div>
-        <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando</p>
+        <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando con la nube</p>
     </div>
 
+    <!-- Cabecera Principal -->
     <header id="main-header" class="p-8 pt-12 header-curve text-white shadow-2xl relative overflow-hidden transition-all duration-500">
         <div class="flex justify-between items-start relative z-10">
             <div>
@@ -250,10 +272,13 @@
         </div>
     </header>
 
+    <!-- Filtros de Categoría -->
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-8 py-6"></div>
 
+    <!-- Lista de Productos -->
     <main id="product-list" class="px-8 pb-32"></main>
 
+    <!-- Vista de Carrito (Modal) -->
     <div id="cart-view" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
         <div class="w-full bg-white rounded-t-[3.5rem] p-10 shadow-2xl relative max-w-md mx-auto">
             <div class="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-100 rounded-full"></div>
@@ -273,6 +298,7 @@
         </div>
     </div>
 
+    <!-- Notificaciones Toast -->
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden animate__animated animate__fadeInUp"></div>
 
 </body>
