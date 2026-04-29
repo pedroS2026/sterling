@@ -37,11 +37,12 @@
         let busquedaActual = "";
         let configNegocio = {};
 
+        // AJUSTE 1: Todos los negocios usan el icono de carrito ('fa-shopping-cart')
         const temas = {
-            food: { primary: 'orange-500', bg: 'slate-900', label: 'Pedido', icon: 'fa-utensils' },
-            parts: { primary: 'blue-600', bg: 'slate-900', label: 'Cotización', icon: 'fa-cogs' },
-            bakery: { primary: 'pink-500', bg: 'stone-900', label: 'Encargo', icon: 'fa-birthday-cake' },
-            store: { primary: 'emerald-600', bg: 'zinc-900', label: 'Compra', icon: 'fa-shopping-bag' }
+            food: { primary: 'orange-500', bg: 'slate-900', label: 'Pedido', icon: 'fa-shopping-cart' },
+            parts: { primary: 'blue-600', bg: 'slate-900', label: 'Cotización', icon: 'fa-shopping-cart' },
+            bakery: { primary: 'pink-500', bg: 'stone-900', label: 'Encargo', icon: 'fa-shopping-cart' },
+            store: { primary: 'emerald-600', bg: 'zinc-900', label: 'Compra', icon: 'fa-shopping-cart' }
         };
 
         async function actualizarTasa() {
@@ -282,9 +283,10 @@
 
     <!-- MEJORA: Modal Detalle de Producto -->
     <div id="detail-view" class="fixed inset-0 z-[500] bg-white hidden opacity-0 transition-opacity duration-300 flex flex-col">
-        <div class="relative h-2/3">
-            <img id="detail-img" class="w-full h-full object-cover rounded-b-[3rem]">
-            <button onclick="cerrarDetalle()" class="absolute top-8 left-8 w-12 h-12 bg-black/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center">
+        <!-- AJUSTE 2: Se cambia object-cover por object-contain y se añade un fondo suave -->
+        <div class="relative h-2/3 bg-slate-50 rounded-b-[3rem] p-8 flex items-center justify-center">
+            <img id="detail-img" class="max-w-full max-h-full object-contain rounded-2xl drop-shadow-md">
+            <button onclick="cerrarDetalle()" class="absolute top-8 left-8 w-12 h-12 bg-black/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center z-10">
                 <i class="fas fa-chevron-left"></i>
             </button>
         </div>
