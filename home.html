@@ -31,8 +31,8 @@
                 </div>
                 <span class="font-bold text-xl tracking-tight">Digitaliza <span class="text-blue-600">Urpín</span></span>
             </div>
-            <!-- WhatsApp con tu número actualizado -->
-            <a href="https://wa.me/584266662491" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-semibold hover:bg-blue-600 transition-all text-sm">
+            <!-- WhatsApp General Arriba -->
+            <a href="https://wa.me/584266662491?text=Hola,%20deseo%20más%20información%20sobre%20los%20servicios%20de%20Digitaliza%20Urpín" target="_blank" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-semibold hover:bg-blue-600 transition-all text-sm">
                 WhatsApp
             </a>
         </div>
@@ -48,11 +48,20 @@
             <p class="text-lg text-slate-600 mb-10 max-w-2xl mx-auto">
                 Especialistas en Menús QR inteligentes, catálogos interactivos y posicionamiento en Google Maps. Impulsa tus ventas hoy mismo.
             </p>
-            <div class="flex flex-col md:row gap-4 justify-center">
-                <a href="https://wa.me/584266662491" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:scale-105 transition-transform">
+            
+            <!-- NUEVO: Selector y Botón de Presupuesto -->
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <select id="opcion-servicio" class="px-6 py-4 rounded-2xl border-2 border-blue-100 bg-white text-slate-700 font-semibold focus:outline-none focus:border-blue-500 shadow-sm cursor-pointer w-full md:w-auto">
+                    <option value="" disabled selected>¿Qué necesitas?</option>
+                    <option value="Menú Digital QR">Menú Digital QR</option>
+                    <option value="Catálogo Interactivo">Catálogo Interactivo</option>
+                    <option value="Soporte Técnico">Soporte Técnico</option>
+                </select>
+                <button onclick="enviarPresupuesto()" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:scale-105 transition-transform w-full md:w-auto">
                     Solicitar Presupuesto
-                </a>
+                </button>
             </div>
+
         </div>
     </header>
 
@@ -126,7 +135,8 @@
                 No basta con tener un local. Optimizamos tu ficha de negocio para que aparezcas en los primeros resultados de búsqueda en Barcelona y el área metropolitana.
             </p>
             <div class="flex justify-center gap-4">
-                <a href="https://wa.me/584266662491" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors uppercase text-xs tracking-widest">
+                <!-- Botón Google Maps Modificado -->
+                <a href="https://wa.me/584266662491?text=Deseo%20mejorar%20la%20posicion%20de%20mi%20negocio%20en%20google%20maps" target="_blank" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors uppercase text-xs tracking-widest">
                     Mejorar mi Posición
                 </a>
             </div>
@@ -138,11 +148,32 @@
         <p class="font-black text-slate-800 mb-2 uppercase tracking-tight">Digitaliza Urpín</p>
         <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-6">Soluciones Digitales • Barcelona • Venezuela</p>
         <div class="flex justify-center">
-            <a href="https://wa.me/584266662491" class="text-slate-400 text-3xl hover:text-emerald-500 transition-colors">
+            <!-- Icono WhatsApp Footer Modificado -->
+            <a href="https://wa.me/584266662491?text=Hola,%20vengo%20de%20su%20sitio%20web%20y%20deseo%20más%20información" target="_blank" class="text-slate-400 text-3xl hover:text-emerald-500 transition-colors">
                 <i class="fab fa-whatsapp"></i>
             </a>
         </div>
     </footer>
 
+    <!-- Script para la lógica del botón Solicitar Presupuesto -->
+    <script>
+        function enviarPresupuesto() {
+            var select = document.getElementById('opcion-servicio');
+            var servicio = select.value;
+            
+            // Si el cliente no selecciona nada, enviamos un mensaje genérico
+            if (servicio === "") {
+                var mensajeGenerico = "Hola, deseo solicitar un presupuesto para mi negocio.";
+                window.open("https://wa.me/584266662491?text=" + encodeURIComponent(mensajeGenerico), '_blank');
+                return;
+            }
+            
+            // Si selecciona un servicio, armamos el mensaje específico
+            var mensaje = "Deseo solicitar el presupuesto para: " + servicio;
+            var url = "https://wa.me/584266662491?text=" + encodeURIComponent(mensaje);
+            
+            window.open(url, '_blank');
+        }
+    </script>
 </body>
 </html>
