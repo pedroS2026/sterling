@@ -31,7 +31,6 @@
                 </div>
                 <span class="font-bold text-xl tracking-tight">Digitaliza <span class="text-blue-600">Urpín</span></span>
             </div>
-            <!-- WhatsApp Directo Navegación -->
             <a href="whatsapp://send?phone=584266662491&text=Hola,%20deseo%20más%20información%20sobre%20los%20servicios%20de%20Digitaliza%20Urpín" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-semibold hover:bg-blue-600 transition-all text-sm">
                 WhatsApp
             </a>
@@ -63,7 +62,7 @@
         </div>
     </header>
 
-    <!-- ... (Sección de Ejemplos se mantiene igual ya que son enlaces web) ... -->
+    <!-- Sección de Ejemplos -->
     <section id="ejemplos" class="py-16 px-6">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-12">
@@ -115,7 +114,8 @@
     <!-- Sección CTA Google Maps Directo -->
     <section class="py-16 px-6 bg-slate-900 text-white rounded-[3rem] mx-6 mb-16 shadow-xl">
         <div class="max-w-4xl mx-auto text-center">
-            <h2 class="text-3xl font-extrabold mb-6 italic tracking-tighter uppercase">Posicionamiento en Google Maps</h2>
+            <!-- AJUSTE REALIZADO AQUÍ -->
+            <h2 class="text-3xl font-extrabold mb-6 italic tracking-tighter">Posicionamiento<br>GoogleMaps</h2>
             <p class="text-slate-400 mb-8 leading-relaxed max-w-xl mx-auto">
                 No basta con tener un local. Optimizamos tu ficha de negocio para que aparezcas en los primeros resultados de búsqueda.
             </p>
@@ -150,10 +150,8 @@
             var urlApp = "whatsapp://send?phone=" + numero + "&text=" + encodeURIComponent(mensaje);
             var urlWeb = "https://web.whatsapp.com/send?phone=" + numero + "&text=" + encodeURIComponent(mensaje);
 
-            // Intento de apertura directa
             window.location.href = urlApp;
 
-            // Respaldo por si falla la apertura directa en PC
             setTimeout(function() {
                 if (document.hasFocus()) {
                     window.open(urlWeb, '_blank');
