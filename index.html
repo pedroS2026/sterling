@@ -30,6 +30,13 @@
         const CLIENTE_ID = params.get('id') || "estermendoza"; 
         const APP_ID = "digitaliza-urpin-2026"; 
         
+        // --- LOGICA DE PRECIOS DIGITALIZA URPÍN ---
+        const APP_SETTINGS = {
+            impuestoIVA: 0.16,   // 16% IVA estándar
+            aplicarIVA: true,    // true: suma IVA al precio base / false: precio ya incluye IVA
+            redondearBs: true    // Redondea Bs al entero superior para facilitar pagos
+        };
+
         let TASA_BCV = 49.50; 
         let carrito = [];
         let productosData = [];
@@ -37,12 +44,29 @@
         let busquedaActual = "";
         let configNegocio = {};
 
-        // AJUSTE 1: Todos los negocios usan el icono de carrito ('fa-shopping-cart')
         const temas = {
             food: { primary: 'orange-500', bg: 'slate-900', label: 'Pedido', icon: 'fa-shopping-cart' },
             parts: { primary: 'blue-600', bg: 'slate-900', label: 'Cotización', icon: 'fa-shopping-cart' },
             bakery: { primary: 'pink-500', bg: 'stone-900', label: 'Encargo', icon: 'fa-shopping-cart' },
             store: { primary: 'emerald-600', bg: 'zinc-900', label: 'Compra', icon: 'fa-shopping-cart' }
+        };
+
+        // Función Maestra de Cálculo de Precios
+        window.calcularPrecios = (precioBase) => {
+            let usdFinal = Number(precioBase);
+            if (APP_SETTINGS.aplicarIVA) {
+                usdFinal = precioBase * (1 + APP_SETTINGS.impuestoIVA);
+            }
+            
+            let bsFinal = usdFinal * TASA_BCV;
+            if (APP_SETTINGS.redondearBs) {
+                bsFinal = Math.ceil(bsFinal);
+            }
+
+            return {
+                usd: usdFinal.toFixed(2),
+                bs: bsFinal.toLocaleString('es-VE')
+            };
         };
 
         async function actualizarTasa() {
@@ -85,6 +109,11 @@
             document.getElementById('shop-name').innerHTML = `${configNegocio.name} <span class="text-${tema.primary}">${configNegocio.accent}</span>`;
             document.getElementById('cart-icon').className = `fas ${tema.icon} text-${tema.primary} text-xl`;
             document.getElementById('btn-send-text').innerText = `Enviar ${tema.label} vía WhatsApp`;
+            
+            // Actualizar nota del IVA en el pie de página
+            document.getElementById('iva-note').innerText = APP_SETTINGS.aplicarIVA 
+                ? "Precios incluyen IVA (16%)" 
+                : "Precios ya incluyen impuestos o exentos";
 
             renderCategorias(tema);
             renderProductos(tema);
@@ -109,7 +138,9 @@
                 p.name.toLowerCase().includes(busquedaActual.toLowerCase())
             );
 
-            container.innerHTML = filtrados.map(p => `
+            container.innerHTML = filtrados.map(p => {
+                const precios = window.calcularPrecios(p.price);
+                return `
                 <div class="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center mb-5 animate__animated animate__fadeInUp">
                     <img onclick="window.verDetalle('${p.id}')" src="${p.img || ''}" class="w-24 h-24 rounded-[2rem] object-cover bg-slate-50 cursor-pointer active:scale-95 transition-transform" onerror="this.src='https://placehold.co/200x200/f8fafc/64748b?text=${p.name[0]}'">
                     <div class="ml-5 flex-1">
@@ -117,8 +148,8 @@
                         <p class="text-[8px] text-slate-400 font-bold uppercase mb-2">${p.category}</p>
                         <div class="flex justify-between items-end">
                             <div>
-                                <span class="text-xl font-black text-slate-900">$${Number(p.price).toFixed(2)}</span>
-                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${(p.price * TASA_BCV).toFixed(2)} Bs.</span>
+                                <span class="text-xl font-black text-slate-900">$${precios.usd}</span>
+                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-tighter">${precios.bs} Bs.</span>
                             </div>
                             <button onclick="window.agregar('${p.id}')" class="bg-${tema.primary} text-white w-12 h-12 rounded-[1.2rem] flex items-center justify-center shadow-lg active:scale-90 transition-all">
                                 <i class="fas fa-plus"></i>
@@ -126,21 +157,21 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
-        // --- MEJORA 1: VISTA DETALLE ---
         window.verDetalle = (id) => {
             const p = productosData.find(x => String(x.id) === String(id));
             if (!p) return;
             const tema = temas[configNegocio.type] || temas.food;
             const view = document.getElementById('detail-view');
+            const precios = window.calcularPrecios(p.price);
             
             document.getElementById('detail-img').src = p.img || '';
             document.getElementById('detail-name').innerText = p.name;
             document.getElementById('detail-cat').innerText = p.category;
-            document.getElementById('detail-price-usd').innerText = Number(p.price).toFixed(2);
-            document.getElementById('detail-price-bs').innerText = (p.price * TASA_BCV).toFixed(2);
+            document.getElementById('detail-price-usd').innerText = precios.usd;
+            document.getElementById('detail-price-bs').innerText = precios.bs;
             document.getElementById('detail-add-btn').onclick = () => { window.agregar(p.id); window.cerrarDetalle(); };
             document.getElementById('detail-add-btn').className = `w-full bg-${tema.primary} text-white py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all`;
             
@@ -173,28 +204,41 @@
             badge.innerText = count;
             badge.classList.toggle('hidden', count === 0);
             
-            let total = 0;
+            let totalAcumuladoUSD = 0;
             const container = document.getElementById('cart-items');
+            
             if (carrito.length === 0) {
                 container.innerHTML = `<div class="py-12 text-center text-slate-300 text-[10px] font-bold uppercase">Carrito Vacío</div>`;
             } else {
                 container.innerHTML = carrito.map(i => {
-                    total += (i.price * i.qty);
+                    const preciosIndividuales = window.calcularPrecios(i.price);
+                    const subtotalItem = parseFloat(preciosIndividuales.usd) * i.qty;
+                    totalAcumuladoUSD += subtotalItem;
+                    
                     return `
                     <div class="flex justify-between py-4 border-b border-slate-50 items-center">
-                        <div class="pr-4">
+                        <div class="pr-4 flex-1">
                             <h4 class="text-[11px] font-black uppercase text-slate-800 leading-tight">${i.name}</h4>
-                            <p class="text-[10px] text-slate-400 font-bold">${i.qty} x $${i.price.toFixed(2)}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter italic">
+                                ${i.qty} x $${preciosIndividuales.usd} 
+                                <span class="text-blue-500 ml-2">Sub: $${subtotalItem.toFixed(2)}</span>
+                            </p>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="window.modificar('${i.id}', -1)" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold">-</button>
+                            <span class="text-xs font-black w-4 text-center">${i.qty}</span>
                             <button onclick="window.modificar('${i.id}', 1)" class="w-8 h-8 bg-slate-100 rounded-xl text-slate-500 font-bold">+</button>
                         </div>
                     </div>`;
                 }).join('');
             }
-            document.getElementById('total-usd').innerText = total.toFixed(2);
-            document.getElementById('total-bs').innerText = (total * TASA_BCV).toLocaleString('es-VE', {minimumFractionDigits: 2});
+
+            const totalFinalBs = APP_SETTINGS.redondearBs 
+                ? Math.ceil(totalAcumuladoUSD * TASA_BCV) 
+                : (totalAcumuladoUSD * TASA_BCV);
+
+            document.getElementById('total-usd').innerText = totalAcumuladoUSD.toFixed(2);
+            document.getElementById('total-bs').innerText = totalFinalBs.toLocaleString('es-VE', {minimumFractionDigits: 2});
         };
 
         window.modificar = (id, d) => {
@@ -212,7 +256,6 @@
             setTimeout(() => t.classList.add('hidden'), 2000);
         };
 
-        // --- MEJORA 2: SEGURIDAD WHATSAPP ---
         window.enviarWhatsApp = () => {
             if (carrito.length === 0) return;
             const tel = (configNegocio.whatsapp || '584120000000').replace(/\D/g, '');
@@ -222,18 +265,21 @@
             let msg = `*🛒 NUEVA SOLICITUD - ${configNegocio.name}*\n`;
             msg += `_ID Cliente: ${CLIENTE_ID}_\n`;
             msg += `--------------------------\n\n`;
+            
             carrito.forEach(i => {
-                msg += `✅ *${i.qty}x* ${i.name}\n   Subtotal: $${(i.price*i.qty).toFixed(2)}\n`;
+                const preciosW = window.calcularPrecios(i.price);
+                msg += `✅ *${i.qty}x* ${i.name}\n   Subtotal: $${(parseFloat(preciosW.usd)*i.qty).toFixed(2)}\n`;
             });
+            
             msg += `\n--------------------------\n`;
             msg += `💰 *RESUMEN DE PAGO:*\n`;
             msg += `💵 TOTAL USD: *$${totalUSD}*\n`;
             msg += `🇻🇪 TOTAL BS: *${totalBS}*\n\n`;
-            msg += `📊 _Ref. Tasa del día: ${TASA_BCV.toFixed(2)} Bs/USD_\n`;
+            msg += `📊 _Ref. Tasa: ${TASA_BCV.toFixed(2)} Bs/USD_\n`;
+            msg += `⚖️ _${APP_SETTINGS.aplicarIVA ? "Precios incluyen IVA (16%)" : "Impuestos incluidos"}_\n`;
             msg += `--------------------------\n`;
-            msg += `_Por favor, confírmeme disponibilidad para realizar el pago._`;
+            msg += `_Generado por Digitaliza Urpín_`;
 
-            // Enlace directo api.whatsapp.com
             window.open(`https://api.whatsapp.com/send?phone=${tel}&text=${encodeURIComponent(msg)}`, '_blank');
         };
 
@@ -244,7 +290,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        input:focus::placeholder { opacity: 0; }
     </style>
 </head>
 <body class="max-w-md mx-auto bg-slate-50 min-h-screen relative overflow-x-hidden">
@@ -281,9 +326,8 @@
     <!-- Lista de Productos -->
     <main id="product-list" class="px-8 pb-32"></main>
 
-    <!-- MEJORA: Modal Detalle de Producto -->
+    <!-- Modal Detalle -->
     <div id="detail-view" class="fixed inset-0 z-[500] bg-white hidden opacity-0 transition-opacity duration-300 flex flex-col">
-        <!-- AJUSTE 2: Se cambia object-cover por object-contain y se añade un fondo suave -->
         <div class="relative h-2/3 bg-slate-50 rounded-b-[3rem] p-8 flex items-center justify-center">
             <img id="detail-img" class="max-w-full max-h-full object-contain rounded-2xl drop-shadow-md">
             <button onclick="cerrarDetalle()" class="absolute top-8 left-8 w-12 h-12 bg-black/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center z-10">
@@ -299,8 +343,7 @@
             </div>
             <div class="mt-auto">
                 <button id="detail-add-btn" class="w-full">
-                    <i class="fas fa-plus"></i>
-                    Añadir al Carrito
+                    <i class="fas fa-plus"></i> Añadir al Carrito
                 </button>
             </div>
         </div>
@@ -312,12 +355,12 @@
             <div class="w-12 h-1 bg-slate-100 rounded-full absolute top-4 left-1/2 -translate-x-1/2"></div>
             <div class="flex justify-between items-center mb-8">
                 <h2 class="font-black text-2xl uppercase italic tracking-tighter">Tu Compra</h2>
-                <button onclick="toggleCart()" class="text-slate-200 hover:text-slate-400"><i class="fas fa-times text-xl"></i></button>
+                <button onclick="toggleCart()"><i class="fas fa-times text-xl text-slate-300"></i></button>
             </div>
             <div id="cart-items" class="max-h-[40vh] overflow-y-auto no-scrollbar mb-8"></div>
             <div class="bg-slate-50 rounded-[2.5rem] p-6 mb-8 flex justify-between items-end border border-slate-100">
                 <div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Total a Pagar</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Total Final</p>
                     <h3 class="text-4xl font-black text-slate-900">$<span id="total-usd">0.00</span></h3>
                 </div>
                 <p class="text-lg font-black text-blue-600 italic"><span id="total-bs">0,00</span> Bs.</p>
@@ -326,11 +369,12 @@
                 <i class="fab fa-whatsapp text-2xl"></i>
                 <span id="btn-send-text">Finalizar Pedido</span>
             </button>
+            <p id="iva-note" class="text-[9px] text-center text-slate-400 font-bold uppercase mt-4 tracking-widest"></p>
         </div>
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden animate__animated animate__fadeInUp"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden"></div>
 
 </body>
 </html>
