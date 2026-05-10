@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digitaliza Urpín | Catálogo Inteligente</title>
     
-    <!-- Configuración PWA -->
-    <meta name="theme-color" content="#0f172a">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="logo_urpin.png">
-    
     <!-- Librerías de Estilo y Animación -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -56,22 +51,14 @@
             store: { primary: 'emerald-600', bg: 'zinc-900', label: 'Compra', icon: 'fa-shopping-cart' }
         };
 
-        // Función Maestra de Cálculo de Precios
         window.calcularPrecios = (precioBase) => {
             let usdFinal = Number(precioBase);
             if (APP_SETTINGS.aplicarIVA) {
                 usdFinal = precioBase * (1 + APP_SETTINGS.impuestoIVA);
             }
-            
             let bsFinal = usdFinal * TASA_BCV;
-            if (APP_SETTINGS.redondearBs) {
-                bsFinal = Math.ceil(bsFinal);
-            }
-
-            return {
-                usd: usdFinal.toFixed(2),
-                bs: bsFinal.toLocaleString('es-VE')
-            };
+            if (APP_SETTINGS.redondearBs) bsFinal = Math.ceil(bsFinal);
+            return { usd: usdFinal.toFixed(2), bs: bsFinal.toLocaleString('es-VE') };
         };
 
         async function actualizarTasa() {
@@ -115,10 +102,8 @@
             document.getElementById('cart-icon').className = `fas ${tema.icon} text-${tema.primary} text-xl`;
             document.getElementById('btn-send-text').innerText = `Enviar ${tema.label} vía WhatsApp`;
             
-            // Actualizar nota del IVA en el pie de página
             document.getElementById('iva-note').innerText = APP_SETTINGS.aplicarIVA 
-                ? "Precios incluyen IVA (16%)" 
-                : "Precios ya incluyen impuestos o exentos";
+                ? "Precios incluyen IVA (16%)" : "Precios ya incluyen impuestos o exentos";
 
             renderCategorias(tema);
             renderProductos(tema);
@@ -219,7 +204,6 @@
                     const preciosIndividuales = window.calcularPrecios(i.price);
                     const subtotalItem = parseFloat(preciosIndividuales.usd) * i.qty;
                     totalAcumuladoUSD += subtotalItem;
-                    
                     return `
                     <div class="flex justify-between py-4 border-b border-slate-50 items-center">
                         <div class="pr-4 flex-1">
@@ -238,10 +222,7 @@
                 }).join('');
             }
 
-            const totalFinalBs = APP_SETTINGS.redondearBs 
-                ? Math.ceil(totalAcumuladoUSD * TASA_BCV) 
-                : (totalAcumuladoUSD * TASA_BCV);
-
+            const totalFinalBs = APP_SETTINGS.redondearBs ? Math.ceil(totalAcumuladoUSD * TASA_BCV) : (totalAcumuladoUSD * TASA_BCV);
             document.getElementById('total-usd').innerText = totalAcumuladoUSD.toFixed(2);
             document.getElementById('total-bs').innerText = totalFinalBs.toLocaleString('es-VE', {minimumFractionDigits: 2});
         };
@@ -267,24 +248,12 @@
             const totalUSD = document.getElementById('total-usd').innerText;
             const totalBS = document.getElementById('total-bs').innerText;
             
-            let msg = `*🛒 NUEVA SOLICITUD - ${configNegocio.name}*\n`;
-            msg += `_ID Cliente: ${CLIENTE_ID}_\n`;
-            msg += `--------------------------\n\n`;
-            
+            let msg = `*🛒 NUEVA SOLICITUD - ${configNegocio.name}*\n_ID Cliente: ${CLIENTE_ID}_\n--------------------------\n\n`;
             carrito.forEach(i => {
                 const preciosW = window.calcularPrecios(i.price);
                 msg += `✅ *${i.qty}x* ${i.name}\n   Subtotal: $${(parseFloat(preciosW.usd)*i.qty).toFixed(2)}\n`;
             });
-            
-            msg += `\n--------------------------\n`;
-            msg += `💰 *RESUMEN DE PAGO:*\n`;
-            msg += `💵 TOTAL USD: *$${totalUSD}*\n`;
-            msg += `🇻🇪 TOTAL BS: *${totalBS}*\n\n`;
-            msg += `📊 _Ref. Tasa: ${TASA_BCV.toFixed(2)} Bs/USD_\n`;
-            msg += `⚖️ _${APP_SETTINGS.aplicarIVA ? "Precios incluyen IVA (16%)" : "Impuestos incluidos"}_\n`;
-            msg += `--------------------------\n`;
-            msg += `_Generado por Digitaliza Urpín_`;
-
+            msg += `\n--------------------------\n💰 *RESUMEN DE PAGO:*\n💵 TOTAL USD: *$${totalUSD}*\n🇻🇪 TOTAL BS: *${totalBS}*\n\n📊 _Ref. Tasa: ${TASA_BCV.toFixed(2)} Bs/USD_\n⚖️ _${APP_SETTINGS.aplicarIVA ? "Precios incluyen IVA (16%)" : "Impuestos incluidos"}_\n--------------------------\n_Generado por Digitaliza Urpín_`;
             window.open(`https://api.whatsapp.com/send?phone=${tel}&text=${encodeURIComponent(msg)}`, '_blank');
         };
 
@@ -325,10 +294,8 @@
         </div>
     </header>
 
-    <!-- Filtros -->
+    <!-- Filtros y Lista -->
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-8 py-6"></div>
-
-    <!-- Lista de Productos -->
     <main id="product-list" class="px-8 pb-32"></main>
 
     <!-- Modal Detalle -->
@@ -381,16 +348,16 @@
     <!-- Toast -->
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden"></div>
 
-    <!-- Registro del Service Worker para PWA (Añadido) -->
+    <!-- CÓDIGO EXTERMINADOR DE PWA -->
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Catálogo Registrado', reg))
-                    .catch(err => console.log('Error SW Catálogo', err));
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Rastro de PWA antigua eliminado.');
+                }
             });
         }
     </script>
-
 </body>
 </html>
