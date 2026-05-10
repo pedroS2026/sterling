@@ -1,0 +1,23 @@
+{
+  "name": "Digitaliza Urpín",
+  "short_name": "DU",
+  "description": "Menús Digitales Inteligentes y PWA para Negocios",
+  "start_url": "/home.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo_urpin.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo_urpin.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
