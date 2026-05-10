@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digitaliza Urpín | Catálogo Inteligente</title>
     
+    <!-- Configuración PWA -->
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo_urpin.png">
+    
     <!-- Librerías de Estilo y Animación -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -375,6 +380,17 @@
 
     <!-- Toast -->
     <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden"></div>
+
+    <!-- Registro del Service Worker para PWA (Añadido) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Catálogo Registrado', reg))
+                    .catch(err => console.log('Error SW Catálogo', err));
+            });
+        }
+    </script>
 
 </body>
 </html>
