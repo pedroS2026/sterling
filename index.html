@@ -72,22 +72,39 @@
             };
         };
 
-        // Función para actualizar tasa (MODIFICADA: Para que refleje en pantalla siempre)
+        // Función para actualizar tasa (MODIFICADA: Utiliza API de Venezuela oficial BCV)
         async function actualizarTasa() {
             try {
-                const response = await fetch('https://open.er-api.com/v6/latest/USD');
+                // Buscamos directamente la tasa oficial BCV de una API venezolana
+                const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const data = await response.json();
-                if (data?.rates?.VES) {
-                    TASA_BCV = data.rates.VES;
+                
+                if (data && data.promedio) {
+                    TASA_BCV = data.promedio;
                     const el = document.getElementById('bcv-rate');
                     if (el) el.innerText = `TASA BCV: ${TASA_BCV.toFixed(2)} BS.`;
+                } else {
+                    throw new Error("Datos BCV inválidos");
                 }
             } catch (e) { 
-                console.warn("Error buscando tasa web. Usando tasa por defecto."); 
-                const el = document.getElementById('bcv-rate');
-                if (el) el.innerText = `TASA REF: ${TASA_BCV.toFixed(2)} BS.`;
+                console.warn("Fallo API principal. Intentando respaldo..."); 
+                try {
+                    // Fallback (Respaldo) por si la página de la API de Venezuela se cae
+                    const resFall = await fetch('https://open.er-api.com/v6/latest/USD');
+                    const dataFall = await resFall.json();
+                    if (dataFall?.rates?.VES) {
+                        TASA_BCV = dataFall.rates.VES;
+                        const el = document.getElementById('bcv-rate');
+                        if (el) el.innerText = `TASA BCV: ${TASA_BCV.toFixed(2)} BS.`;
+                    } else {
+                        throw new Error();
+                    }
+                } catch (e2) {
+                    const el = document.getElementById('bcv-rate');
+                    if (el) el.innerText = `TASA REF: ${TASA_BCV.toFixed(2)} BS.`;
+                }
             } finally {
-                // Obligamos a que la interfaz actualice sus números cuando termine
+                // Obligamos a que la interfaz actualice sus números cuando termine todo
                 renderInterface();
                 if(carrito.length > 0) window.actualizarCarrito();
             }
