@@ -1,0 +1,229 @@
+RESUMEN DE PRIORIDADES
+
+(Perfecto para guardar en TXT)
+
+DIGITALIZA URPÍN
+ROADMAP DE DESARROLLO Y ESCALABILIDAD
+
+========================================
+FASE 1 — ESTABILIZACIÓN DEL SISTEMA
+========================================
+
+[✔] Reorganizar rutas:
+- index.html = landing principal
+- menu.html = catálogo dinámico
+
+[✔] Regenerar Firebase limpio
+[✔] Regenerar QR actualizados
+[✔] Verificar URLs correctas
+
+PENDIENTE:
+[ ] Separar JavaScript del HTML
+[ ] Separar CSS del HTML
+[ ] Organizar carpetas del proyecto
+[ ] Limpiar código repetido
+[ ] Estandarizar nombres de variables
+[ ] Corregir Tailwind dinámico
+[ ] Optimizar renderizado
+
+----------------------------------------
+
+ESTRUCTURA OBJETIVO:
+
+/public
+   index.html
+   menu.html
+   admin.html
+
+/js
+   firebase.js
+   menu.js
+   cart.js
+   pricing.js
+   ui.js
+
+/css
+   styles.css
+
+/assets
+   images/
+   icons/
+
+========================================
+FASE 2 — SEGURIDAD Y BACKEND
+========================================
+
+[ ] Configurar reglas de Firestore
+[ ] Proteger acceso a escritura
+[ ] Implementar Firebase Auth
+[ ] Crear usuarios administradores
+[ ] Separar clientes por permisos
+[ ] Validar datos antes de guardar
+
+----------------------------------------
+
+OBJETIVO:
+Evitar modificaciones no autorizadas
+y preparar la plataforma para clientes reales.
+
+========================================
+FASE 3 — PANEL ADMINISTRATIVO
+========================================
+
+Crear:
+admin.html
+
+FUNCIONES:
+[ ] Login
+[ ] Crear productos
+[ ] Editar productos
+[ ] Eliminar productos
+[ ] Subir imágenes
+[ ] Editar negocio
+[ ] Cambiar WhatsApp
+[ ] Cambiar categorías
+[ ] Configurar colores/tema
+
+FUTURO:
+[ ] Estadísticas
+[ ] Pedidos recibidos
+[ ] Historial
+[ ] Gestión de clientes
+
+----------------------------------------
+
+OBJETIVO:
+Transformar el sistema en SaaS autogestionable.
+
+========================================
+FASE 4 — FIREBASE STORAGE
+========================================
+
+[ ] Subida real de imágenes
+[ ] Compresión automática
+[ ] Organización por cliente
+[ ] Eliminación automática
+[ ] Optimización de carga
+
+----------------------------------------
+
+OBJETIVO:
+Eliminar dependencia de URLs manuales.
+
+========================================
+FASE 5 — MODULARIZACIÓN
+========================================
+
+MODELO ACTUAL:
+Sistema plano universal
+
+EVOLUCIÓN:
+[ ] Módulos por tipo de negocio
+
+FOOD:
+[ ] tamaños
+[ ] toppings
+[ ] extras
+
+PARTS:
+[ ] stock
+[ ] compatibilidad
+[ ] SKU
+
+BAKERY:
+[ ] disponibilidad diaria
+[ ] pedidos programados
+
+STORE:
+[ ] promociones
+[ ] inventario
+
+----------------------------------------
+
+OBJETIVO:
+Convertir la plataforma en sistema modular.
+
+========================================
+FASE 6 — ANALYTICS
+========================================
+
+[ ] Escaneos QR
+[ ] Productos más vistos
+[ ] Pedidos enviados
+[ ] Horas pico
+[ ] Conversión
+
+----------------------------------------
+
+OBJETIVO:
+Aumentar valor comercial y mensualidades.
+
+========================================
+FASE 7 — SISTEMA SaaS
+========================================
+
+[ ] Suscripciones
+[ ] Planes
+[ ] Pagos mensuales
+[ ] Límites por plan
+[ ] Multiusuario
+[ ] Dominios personalizados
+
+----------------------------------------
+
+PLANES FUTUROS:
+
+BÁSICO
+- QR
+- catálogo
+- WhatsApp
+
+PRO
+- panel admin
+- analytics
+- branding
+
+BUSINESS
+- dominio propio
+- estadísticas avanzadas
+- soporte prioritario
+
+========================================
+FASE 8 — PROFESIONALIZACIÓN
+========================================
+
+[ ] Dominio propio
+[ ] SEO
+[ ] OpenGraph
+[ ] PWA
+[ ] Optimización móvil
+[ ] Backup automático
+[ ] Logs
+[ ] Monitoreo
+
+========================================
+VISIÓN FINAL
+========================================
+
+OBJETIVO:
+Convertir Digitaliza Urpín en una:
+
+PLATAFORMA SaaS DE DIGITALIZACIÓN COMERCIAL
+
+Capaz de ofrecer:
+- menús digitales
+- catálogos inteligentes
+- pedidos vía WhatsApp
+- panel administrativo
+- módulos por negocio
+- estadísticas
+- branding empresarial
+
+Para:
+- restaurantes
+- ferreterías
+- panaderías
+- bodegones
+- tiendas
+- repuesteras
+- comercios en general

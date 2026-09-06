@@ -1,0 +1,8 @@
+
+
+1.- abrir campo en firebase
+
+    .- deliveryRecargo ------ tipo map
+    .- activo: true (bolean)
+    .- label: Con Delivery (string)
+    .- porcentaje: 3 (int64)

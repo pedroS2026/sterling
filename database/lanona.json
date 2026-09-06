@@ -1,0 +1,67 @@
+{
+  "business": {
+    "name": "LA SQUADRA",
+    "accent": "PIZZA & PASTA",
+    "icon": "fa-pizza-slice",
+    "type": "food",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 801,
+      "name": "Pizza Margarita Familiar",
+      "price": 10.00,
+      "category": "Pizzas Clásicas",
+      "img": "https://i.postimg.cc/L6Y86Fzk/margarita.jpg",
+      "desc": "Salsa de la casa, mozzarella premium y albahaca fresca. 8 porciones."
+    },
+    {
+      "id": 802,
+      "name": "Pizza Pepperoni Especial",
+      "price": 13.00,
+      "category": "Pizzas Clásicas",
+      "img": "https://i.postimg.cc/bNDwNfQm/pizza-peperoni.jpg",
+      "desc": "Doble ración de pepperoni crujiente y extra queso mozzarella."
+    },
+    {
+      "id": 803,
+      "name": "Combo Dúo Urpín",
+      "price": 18.00,
+      "category": "Promociones",
+      "img": "https://i.postimg.cc/d15GvcG6/combo.jpg",
+      "desc": "2 Pizzas medianas (1 ingrediente) + Refresco de 1.5L."
+    },
+    {
+      "id": 804,
+      "name": "Vegetariana",
+      "price": 10.00,
+      "category": "Promociones",
+      "img": "https://i.postimg.cc/jdpdD3XQ/vegetariana-pizza.webp",
+      "desc": "Base de masa, salsa de tomate y mozzarella, coronada con vegetales frescos como champiñones, pimientos (verde/rojo), cebolla, aceitunas negras, calabacín, berenjena y brócoli."
+    },
+    {
+      "id": 805,
+      "name": "Pizza Romana",
+      "price": 12.00,
+      "category": "Promociones",
+      "img": "https://i.postimg.cc/9FRQFHGg/pizza-romana.jpg",
+      "desc": "harina de fuerza, agua, levadura, aceite de oliva y sal. Sus variantes principales son la rossa (tomate, anchoas, mozzarella, orégano) o ingredientes frescos como jamón cocido, champiñones y aceitunas negras."
+    },
+    {
+      "id": 806,
+      "name": "Nestea",
+      "price": 1.5,
+      "category": "Bebidas",
+      "img": "https://i.postimg.cc/yYg8YCFv/nestea.jpg",
+      "desc": "Vaso de Nestea 250 ml." 
+    },
+    {
+      "id": 807,
+      "name": "Coca-cola",
+      "price": 2.5,
+      "category": "Bebidas",
+      "img": "https://i.postimg.cc/Prp5rnmm/coca-cola-fria-2-lts.jpg",
+      "desc": "Coca-cola de 1.5 lts. Bien fria."
+    }
+  ]
+}

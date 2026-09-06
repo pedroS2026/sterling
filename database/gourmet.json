@@ -1,0 +1,43 @@
+{
+"business": {
+    "name": "GOURMET",
+    "accent": "URPÍN GRILL",
+    "icon": "fa-utensils",
+    "type": "food",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 701,
+      "name": "Asado Negro Tradicional",
+      "price": 14.00,
+      "category": "Platos Fuertes",
+      "img": "https://i.postimg.cc/qRGWMMLr/Asado-negro.jpg",
+      "desc": "Muchacho redondo en salsa negra de papelón, servido con arroz y plátano frito."
+    },
+    {
+      "id": 702,
+      "name": "Ceviche de Pescado Blanco",
+      "price": 12.00,
+      "category": "Entradas",
+      "img": "https://i.postimg.cc/hj0NPPrW/cerviche.jpg",
+      "desc": "Pesca del día marinada en limón, cebolla morada, ají dulce y cilantro."
+    },
+    {
+      "id": 703,
+      "name": "Solomo de Cuerito (300g)",
+      "price": 18.00,
+      "category": "Carnes",
+      "img": "https://i.postimg.cc/vBvCHHzw/solomo-de-cuerito.jpg",
+      "desc": "Corte premium a la parrilla, acompañado de yuca frita y guasacaca."
+    },
+    {
+      "id": 704,
+      "name": "Copa de Vino Tinto",
+      "price": 5.00,
+      "category": "Bebidas",
+      "img": "https://i.postimg.cc/9MBsFFph/copa-de-tinto.jpg",
+      "desc": "Cepa Cabernet Sauvignon, temperatura ideal para carnes rojas."
+    }
+  ]
+}

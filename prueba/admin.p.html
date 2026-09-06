@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Digitaliza Urpín</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white px-6 py-5 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black uppercase tracking-tight">
+                    Digitaliza Urpín
+                </h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">
+                    Panel Administrativo
+                </p>
+            </div>
+
+            <a href="index.html" class="bg-white/10 hover:bg-white/20 transition px-4 py-2 rounded-xl text-sm font-bold">
+                <i class="fas fa-home mr-2"></i>Ir al Inicio
+            </a>
+        </div>
+    </header>
+
+    <!-- CONTENIDO -->
+    <main class="max-w-6xl mx-auto p-6">
+
+        <!-- BIENVENIDA -->
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mb-8">
+            <h2 class="text-3xl font-black tracking-tight mb-3">
+                Bienvenido al Admin
+            </h2>
+
+            <p class="text-slate-500 leading-relaxed max-w-2xl">
+                Este será el centro de control de la plataforma Digitaliza Urpín.
+                Aquí podrás administrar productos, imágenes, precios, pedidos y clientes.
+            </p>
+        </section>
+
+        <!-- TARJETAS -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- PRODUCTOS -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition">
+                <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl mb-5">
+                    <i class="fas fa-box"></i>
+                </div>
+
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">
+                    Productos
+                </h3>
+
+                <p class="text-sm text-slate-500 mb-5">
+                    Crear, editar y eliminar productos del catálogo.
+                </p>
+
+                <button class="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700 transition">
+                    Administrar
+                </button>
+            </div>
+
+            <!-- PEDIDOS -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-5">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">
+                    Pedidos
+                </h3>
+
+                <p class="text-sm text-slate-500 mb-5">
+                    Ver solicitudes y pedidos realizados por clientes.
+                </p>
+
+                <button class="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 transition">
+                    Ver Pedidos
+                </button>
+            </div>
+
+            <!-- CLIENTES -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition">
+                <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl mb-5">
+                    <i class="fas fa-users"></i>
+                </div>
+
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">
+                    Clientes
+                </h3>
+
+                <p class="text-sm text-slate-500 mb-5">
+                    Administrar negocios registrados en la plataforma.
+                </p>
+
+                <button class="w-full bg-orange-500 text-white py-3 rounded-2xl font-bold hover:bg-orange-600 transition">
+                    Gestionar
+                </button>
+            </div>
+
+            <!-- CONFIG -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition">
+                <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mb-5">
+                    <i class="fas fa-cog"></i>
+                </div>
+
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">
+                    Configuración
+                </h3>
+
+                <p class="text-sm text-slate-500 mb-5">
+                    Ajustes generales del sistema y apariencia.
+                </p>
+
+                <button class="w-full bg-purple-600 text-white py-3 rounded-2xl font-bold hover:bg-purple-700 transition">
+                    Configurar
+                </button>
+            </div>
+        </section>
+
+        <!-- ROADMAP -->
+        <section class="mt-10 bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+            <h2 class="text-2xl font-black mb-6 uppercase tracking-tight">
+                Próximas Funciones
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Login de administradores
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Subida de imágenes
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Editor de productos
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Panel de pedidos en tiempo real
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Estadísticas y métricas
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    ✅ Multi negocios / multi clientes
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

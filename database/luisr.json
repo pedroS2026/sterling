@@ -1,0 +1,43 @@
+{
+  "business": {
+    "name": "FERRE-URPÍN",
+    "accent": "CENTER",
+    "icon": "fa-tools",
+    "type": "retail",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 301,
+      "name": "Taladro Percutor 1/2",
+      "price": 45.00,
+      "category": "Herramientas Eléctricas",
+      "img": "https://i.postimg.cc/VNNdfd1D/taladro-percutor-1-2.jpg",
+      "desc": "Marca DeWalt, 650W. Ideal para concreto y madera. Incluye maletín."
+    },
+    {
+      "id": 302,
+      "name": "Bombillo LED 12W",
+      "price": 1.50,
+      "category": "Iluminación",
+      "img": "https://i.postimg.cc/YSShrhkR/bombillo-12w.jpg",
+      "desc": "Luz blanca, ahorro energético. Multivoltaje 110v-220v."
+    },
+    {
+      "id": 303,
+      "name": "Cerradura de Pomo",
+      "price": 12.00,
+      "category": "Cerrajería",
+      "img": "https://i.postimg.cc/BvvXSXsN/cerradura-pomo.jpg",
+      "desc": "Acero inoxidable, para alcoba. Incluye 3 llaves."
+    },
+    {
+      "id": 304,
+      "name": "Pintura Caucho Clase A",
+      "price": 25.00,
+      "category": "Pinturas",
+      "img": "https://i.postimg.cc/KYYRGRFN/caucho-mate.jpg",
+      "desc": "Galón color Blanco Mate. Alta cubrición y lavable."
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "business": {
+    "name": "Ester Mendoza",
+    "accent": "Cakes",
+    "type": "bakery",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": "mini-001",
+      "name": "Mini Torta Chocolate Brownie",
+      "price": 5.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/jSsF5MfL/MINI-BROWNIE-CHOCO-5-5.jpg",
+      "description": "Estilo brownie, con relleno y cubierta de chocolate. 550gr aprox."
+    },
+    {
+      "id": "mini-002",
+      "name": "Mini Mini de Piña",
+      "price": 2.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/9QWnML9D/MINI-MINI-DE-PINA-2-5.jpg",
+      "description": "Mini torta de Piña"
+    },
+    {
+      "id": "mini-003",
+      "name": "Mini Torta Chocolate con Arequipe",
+      "price": 6.00,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/3xKcRtG4/MINI-CHOCOAREQUIPE-6.jpg",
+      "description": "Estilo brownie, con relleno y cubierta de chocolate y arequipe. 550gr aprox."
+    },
+    {
+      "id": "mini-004",
+      "name": "Panquesitos de vainilla con chispas de choco",
+      "price": 1.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/VkYV6Ktn/PANQUESITOS-DE-VAINILLA-CHISPAS-DE-CHOCO-1-5.jpg",
+      "description": "Panquesitos de vainilla"
+    },
+    {
+      "id": "mini-005",
+      "name": "Panquesitos Marmoleados",
+      "price": 1.70,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/htS5j2mV/PANQUESITOS-MARMOLEADOS.jpg",
+      "description": "Panquesitos Marmoleados"
+    },
+    {
+      "id": "mini-006",
+      "name": "Mini Panquesitos de Chocolate tipo Brownie",
+      "price": 3.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/zGJcBxhg/MINIS-PANQUESITOS-BROWNIE-DE-CHOCOLATE-3-5.jpg",
+      "description": "Estilo brownie, con chocolate"
+    },
+    {
+      "id": "mini-007",
+      "name": "Mini Panquesitos de Chocolate tipo Brownie",
+      "price": 3.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/8z105ZvF/MINIS-PANQUESITOS-BROWNIE-DE-CHOCOLATE2-3-5.jpg",
+      "description": "Estilo brownie, con chocolate"
+    },
+    {
+      "id": "mini-008",
+      "name": "Mini Panquesitos de Chocolate tipo Brownie",
+      "price": 3.50,
+      "category": "Mini Tortas",
+      "img": "https://i.postimg.cc/QdXytf7W/MINIS-PANQUESITOS-BROWNIE-DE-CHOCOLATE3-3-5.jpg",
+      "description": "Estilo brownie, con chocolate"
+    },
+    { 
+      "id": "peq-001",
+      "name": "Torta Pequeña ChocoArequipe",
+      "price": 10.00,
+      "category": "Pequeñas",
+      "img": "https://i.postimg.cc/rwM52brb/PEQUENACHOCOAREQUIPE-10.jpg",
+      "description": "Torta pequeña de chocolate, con relleno y cubierta de chocolate y arequipe. 750 grs. aprox."
+    },
+    {
+      "id": "med-001",
+      "name": "Torta Mediana Chocolate",
+      "price": 15.00,
+      "category": "Medianas",
+      "img": "https://i.postimg.cc/nLfgxnkc/MEDIANA-CHOCO-15.jpg",
+      "description": "Torta húmeda con lluvia de chocolate"
+    },
+    {
+      "id": "med-002",
+      "name": "Torta Mediana Chocolate",
+      "price": 15.00,
+      "category": "Medianas",
+      "img": "https://i.postimg.cc/JhCv8RqM/MEDIANA-DE-CHOCO-15.jpg",
+      "description": "Torta de chocolate"
+    },
+    {
+      "id": "med-003",
+      "name": "Torta Mediana de Piña",
+      "price": 16.00,
+      "category": "Medianas",
+      "img": "https://i.postimg.cc/25NMYCxP/MEDIANA-PINA-16.jpg",
+      "description": "Torta de Piña mediana"
+    },
+    {
+      "id": "med-004",
+      "name": "Torta Mediana ChocoArequipe",
+      "price": 17.00,
+      "category": "Medianas",
+      "img": "https://i.postimg.cc/TPvFxT9T/MEDIANA-CHOCOAREQUIPE-17.jpg",
+      "description": "Torta de chocolate tipo brownie con Arequipe"
+    },
+    {
+      "id": "rac-001",
+      "name": "Pack 8 Raciones Chocolate (Revendedor)",
+      "price": 22.00,
+      "category": "Por Raciones (Revendedores)",
+      "img": "https://i.postimg.cc/wBBfg3mF/CHOCO-PARA-REVENDEDORES-8-RACIONES-22.jpg",
+      "description": "Precio especial para revendedores. Raciones individuales listas."
+    },
+    {
+      "id": "rac-002",
+      "name": "Pack 8 Raciones Chocolate (Revendedor)",
+      "price": 22.00,
+      "category": "Por Raciones (Revendedores)",
+      "img": "https://i.postimg.cc/6QQjtTZs/REVENDEDORES-8-RACIONES-22.jpg",
+      "description": "Precio especial para revendedores. Raciones individuales listas."
+    },
+    {
+      "id": "rac-003",
+      "name": "Pack 8 Raciones Chocolate (Revendedor)",
+      "price": 22.00,
+      "category": "Por Raciones (Revendedores)",
+      "img": "https://i.postimg.cc/zfft83gP/CHOCOLATE-PARA-REVENDEDORES-8-RACIONES-22.jpg",
+      "description": "Precio especial para revendedores. Raciones individuales listas."
+    },
+    {
+      "id": "rac-004",
+      "name": "Pack 8 Raciones ChocoArequipe (Revendedor)",
+      "price": 24.00,
+      "category": "Por Raciones (Revendedores)",
+      "img": "https://i.postimg.cc/tggSp7xc/CHOCOAREQUIPE-REVENDEDORES-8-RACIONES-24.jpg",
+      "description": "Precio especial para revendedores. Raciones individuales listas."
+    },
+    {
+      "id": "rac-005",
+      "name": "Pack 8 Raciones ChocoArequipe (Revendedor)",
+      "price": 24.00,
+      "category": "Por Raciones (Revendedores)",
+      "img": "https://i.postimg.cc/zfft83gM/CHOCOAREQUIPE-REVENDEDORES-8-RACIONES-24-2.jpg",
+      "description": "Precio especial para revendedores. Raciones individuales listas."
+    },
+    {
+      "id": "Gran-001",
+      "name": "Torta grande de Chocolate",
+      "price": 25.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/1z6ggrww/GRANDE-DE-CHOCO.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Gran-002",
+      "name": "Torta grande de Coco",
+      "price": 25.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/5tvHHSLY/COCO-8-RACIONES-25.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Gran-003",
+      "name": "Torta grande de Coco",
+      "price": 25.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/8CWFFmMr/COCO-8-RACIONES-25.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Gran-004",
+      "name": "Torta grande de Coco",
+      "price": 25.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/R0f33LKf/COCO-8-RACIONES-25.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Gran-005",
+      "name": "Torta grande de ChocoArequipe",
+      "price": 27.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/JhJyy5Zk/CHOCOAREQUIPE-GRANDE-27.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Gran-006",
+      "name": "Torta grande de Vainilla con Arequipe",
+      "price": 27.00,
+      "category": "Grandes",
+      "img": "https://i.postimg.cc/HL5JJ9Xb/GRANDE-VAINILLA-CON-AREQUIPE-27.jpg",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Chan-001",
+      "name": "Torta de melocoton con crema chantilly",
+      "price": 35.00,
+      "category": "Chantilly",
+      "img": "https://i.postimg.cc/nrKgMghZ/CHANTILLY-1-melocoton-con-chantilly-35.png",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Chan-002",
+      "name": "Torta fría con chantilly",
+      "price": 35.00,
+      "category": "Chantilly",
+      "img": "https://i.postimg.cc/8cd9s9zk/CHANTILLY-2-torta-fria-con-chantilly-35.png",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Chan-003",
+      "name": "Torta tres leches con crema chantilly",
+      "price": 35.00,
+      "category": "Chantilly",
+      "img": "https://i.postimg.cc/0jGFrFy9/CHANTILLY-tres-leches-con-chantilly-35.png",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Chan-004",
+      "name": "Torta de fresas con crema chantilly",
+      "price": 35.00,
+      "category": "Chantilly",
+      "img": "https://i.postimg.cc/fy7pkpRz/CHANTILLY-vainillas-con-fresas-35.png",
+      "description": "Torta de mas de 2 Kg aproximadamente."
+    },
+    {
+      "id": "Que-001",
+      "name": "Quesillo Pequeño",
+      "price": 15.00,
+      "category": "Quesillos",
+      "img": "https://i.postimg.cc/sxtxDBxm/QUESILLO-PEQUENO-15.jpg",
+      "description": "Quesillo pequeño"
+    },
+    {
+      "id": "Pan-001",
+      "name": "Panque de torta marmoleada",
+      "price": 14.00,
+      "category": "Panques",
+      "img": "https://i.postimg.cc/sfSvwcN8/MARMOLEADA-8-RACIONES-14.jpg",
+      "description": "Torta grande"
+    },
+    {
+      "id": "Pan-002",
+      "name": "Panque de torta de naranja",
+      "price": 13.00,
+      "category": "Panques",
+      "img": "https://i.postimg.cc/KcLRJNHw/NARANJA-8-RACIONES-13.jpg",
+      "description": "Torta grande"
+    }
+  ]
+}

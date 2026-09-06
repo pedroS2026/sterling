@@ -1,0 +1,35 @@
+{
+  "business": {
+    "name": "ESTILO",
+    "accent": "BOUTIQUE",
+    "icon": "fa-tshirt",
+    "type": "retail",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 401,
+      "name": "Franela Oversize Premium",
+      "price": 15.00,
+      "category": "Caballeros",
+      "img": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500",
+      "desc": "100% algodón, colores pasteles disponibles. Tallas S a XL."
+    },
+    {
+      "id": 402,
+      "name": "Vestido de Noche Floral",
+      "price": 35.00,
+      "category": "Damas",
+      "img": "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=500",
+      "desc": "Corte elegante, tela fresca. Ideal para eventos en Lechería."
+    },
+    {
+      "id": 403,
+      "name": "Jeans Classic Blue",
+      "price": 22.00,
+      "category": "Caballeros",
+      "img": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=500",
+      "desc": "Corte recto, mezclilla de alta durabilidad. No destiñe."
+    }
+  ]
+}

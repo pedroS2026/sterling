@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Digitaliza Urpín</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Mismas credenciales de tu menu.html
+        const firebaseConfig = {
+            apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
+            authDomain: "digitaliza-urpin.firebaseapp.com",
+            projectId: "digitaliza-urpin",
+            storageBucket: "digitaliza-urpin.firebasestorage.app",
+            messagingSenderId: "634374370608",
+            appId: "1:634374370608:web:91861bb040c110d560c4f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const APP_ID = "digitaliza-urpin-2026";
+
+        let clienteActualId = "";
+        let productosActuales = [];
+
+        // Función para cargar los productos de un cliente específico
+        window.cargarClienteParaEditar = async () => {
+            const select = document.getElementById('select-cliente');
+            clienteActualId = select.value;
+            
+            if (!clienteActualId) return;
+
+            const statusText = document.getElementById('status-carga');
+            statusText.innerText = "Buscando en Firestore...";
+
+            try {
+                const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clienteActualId);
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    productosActuales = data.products || [];
+                    document.getElementById('editor-title').innerText = `Gestionando: ${data.business?.name || clienteActualId}`;
+                    renderTablaProductos();
+                    document.getElementById('zona-editor').classList.remove('hidden');
+                    statusText.innerText = "";
+                } else {
+                    statusText.innerText = "❌ El ID del cliente no existe en la base de datos.";
+                    document.getElementById('zona-editor').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error al cargar:", error);
+                statusText.innerText = "❌ Error de conexión con Firebase.";
+            }
+        };
+
+        // Renderiza la lista de productos en una tabla limpia
+        function renderTablaProductos() {
+            const container = document.getElementById('tabla-productos-body');
+            if (productosActuales.length === 0) {
+                container.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400 uppercase text-xs font-bold">Este negocio no tiene productos</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = productosActuales.map((p, index) => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="p-4">
+                        <p class="font-bold text-slate-800 uppercase text-sm">${p.name}</p>
+                        <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md uppercase tracking-wider">${p.category}</span>
+                    </td>
+                    <td class="p-4 w-32">
+                        <div class="relative rounded-xl shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-slate-400 font-bold text-sm">$</span>
+                            </div>
+                            <input type="number" step="0.01" value="${p.price}" 
+                                onchange="window.actualizarPrecioMemoria(${index}, this.value)"
+                                class="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Actualiza el array temporal cuando cambias un valor en el input
+        window.actualizarPrecioMemoria = (index, nuevoPrecio) => {
+            productosActuales[index].price = Number(nuevoPrecio);
+        };
+
+        // Sincroniza los nuevos precios directamente en Firestore usando updateDoc
+        window.guardarCambiosFirestore = async () => {
+            if (!clienteActualId) return;
+            
+            const btn = document.getElementById('btn-guardar');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i>Sincronizando...`;
+            btn.disabled = true;
+
+            try {
+                const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clienteActualId);
+                
+                // updateDoc es ultra eficiente: solo modifica el nodo "products"
+                await updateDoc(docRef, {
+                    "products": productosActuales
+                });
+
+                alert("🚀 ¡Precios actualizados con éxito en la nube de forma instantánea!");
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                alert("❌ Ocurrió un error al intentar guardar los cambios.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+    </script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <header class="bg-slate-900 text-white px-6 py-5 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black uppercase tracking-tight">Digitaliza <span class="text-blue-500">Urpín</span></h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Panel Administrativo</p>
+            </div>
+            <a href="index.html" class="bg-white/10 hover:bg-white/20 transition px-4 py-2 rounded-xl text-sm font-bold">
+                <i class="fas fa-home mr-2"></i>Ir al Inicio
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6">
+
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mb-8">
+            <h2 class="text-2xl font-black tracking-tight mb-4 uppercase text-slate-800">Seleccionar Comercio</h2>
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <select id="select-cliente" onchange="window.cargarClienteParaEditar()" class="w-full sm:w-80 px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer">
+                    <option value="" disabled selected>Escoge un cliente para administrar...</option>
+                    <option value="burgers">Burgers (Hamburgueserías)</option>
+                    <option value="lanona">La Nonna (Pizzerías)</option>
+                    <option value="gourmet">Gourmet (Restaurantes)</option>
+                    <option value="luisr">Luis R. (Ferreterías)</option>
+                    <option value="flor">La Flor (Panaderías)</option>
+                    <option value="repuestos">Repuestos (Auto-repuestos)</option>
+                </select>
+                <span id="status-carga" class="text-xs font-bold text-blue-600 uppercase tracking-wider animate-pulse"></span>
+            </div>
+        </section>
+
+        <section id="zona-editor" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mb-8 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6 mb-6">
+                <div>
+                    <h2 id="editor-title" class="text-2xl font-black tracking-tight uppercase text-slate-800">Gestionando Productos</h2>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Modifica los precios en la columna y haz clic en Guardar</p>
+                </div>
+                <button id="btn-guardar" onclick="window.guardarCambiosFirestore()" class="w-full sm:w-auto bg-emerald-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition active:scale-95">
+                    <i class="fas fa-cloud-upload-alt mr-2"></i>Guardar Cambios
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <th class="pb-4">Descripción del Producto</th>
+                            <th class="pb-4">Precio (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-productos-body">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-60">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl mb-5"><i class="fas fa-box"></i></div>
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">Productos</h3>
+                <p class="text-sm text-slate-500">Módulo de edición activo en el selector superior.</p>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-5"><i class="fas fa-shopping-cart"></i></div>
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">Pedidos</h3>
+                <p class="text-sm text-slate-500">Los pedidos llegan directamente al WhatsApp del comercio.</p>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl mb-5"><i class="fas fa-users"></i></div>
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">Clientes</h3>
+                <p class="text-sm text-slate-500">Nuevos registros gestionados a través de terminal en Python.</p>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mb-5"><i class="fas fa-cog"></i></div>
+                <h3 class="font-black text-lg mb-2 uppercase tracking-tight">Configuración</h3>
+                <p class="text-sm text-slate-500">Ajustes globales y tasas automatizadas vía API.</p>
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* ========== FUENTES ========== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+/* ========== RESET / BASE ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ========== UTILIDADES ========== */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ========== COMPONENTES DE index.html ========== */
+.glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+.gradient-text {
+    background: linear-gradient(90deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.card-shadow {
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.08);
+}
+
+/* ========== COMPONENTES DE menu.html ========== */
+body.menu-page {
+    font-family: 'Inter', sans-serif;
+}
+
+/* ========== COMPONENTES DE admin.html ========== */
+body.admin-page {
+    font-family: 'Inter', sans-serif;
+}

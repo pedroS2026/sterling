@@ -1,0 +1,59 @@
+{
+  "business": {
+    "name": "URPÍN",
+    "accent": "BURGER & GRILL",
+    "icon": "fa-fire",
+    "type": "food",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 101,
+      "name": "La Urpín Doble",
+      "price": 6.50,
+      "category": "Hamburguesas",
+      "img": "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=500",
+      "desc": "Doble carne premium, queso cheddar fundido, tocineta crocante y nuestra salsa secreta de la casa.",
+      "extras": [
+        { "nombre": "Extra carne", "precio": 2.5 },
+        { "nombre": "Extra pollo", "precio": 2.0 }
+      ]
+    },
+    {
+      "id": 102,
+      "name": "Combo Callejero",
+      "price": 3.00,
+      "category": "Combos",
+      "img": "https://i.postimg.cc/vZbHcTwB/comida-rapida.jpg",
+      "desc": "Hamburguesa clásica + Papas fritas pequeñas + Refresco de lata."
+    },
+    {
+      "id": 103,
+      "name": "Perro Caliente Especial",
+      "price": 1.50,
+      "category": "Perros Calientes",
+      "img": "https://i.postimg.cc/mgjZM4TB/perros-calientes.jpg",
+      "desc": "Salchicha premium, ensalada rallada, papitas ralladas y trío de salsas tradicionales."
+    },
+    {
+      "id": 104,
+      "name": "Pepito Mixto (20cm)",
+      "price": 7.00,
+      "category": "Pepitos",
+      "img": "https://i.postimg.cc/T302mxTv/pepitos1.jpg",
+      "desc": "Carne de res y pollo a la plancha, queso de mano, jamón y vegetales en pan artesanal.",
+      "extras": [
+        { "nombre": "Extra carne", "precio": 2.5 },
+        { "nombre": "Extra pollo", "precio": 2.0 }
+      ]
+    },
+    {
+      "id": 105,
+      "name": "Refresco Familiar 2L",
+      "price": 2.50,
+      "category": "Bebidas",
+      "img": "https://i.postimg.cc/sgsDvxD2/coca-cola.jpg",
+      "desc": "Coca-Cola o Pepsi de 2 litros bien fría."
+    }
+  ]
+}

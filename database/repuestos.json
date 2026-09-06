@@ -1,0 +1,75 @@
+{
+  "business": {
+    "name": "URPÍN",
+    "accent": "AUTO PARTES",
+    "icon": "fa-car-side",
+    "type": "parts",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 201,
+      "name": "Kit de Tiempo - Toyota Corolla (09-14)",
+      "price": 45.00,
+      "category": "Motor",
+      "img": "https://i.postimg.cc/Njp3c0pW/kit-tiempo-corolla.jpg",
+      "desc": "Kit completo con correa y tensor. Calidad japonesa para motor 1.8L."
+    },
+    {
+      "id": 202,
+      "name": "Pastillas de Freno - Chevrolet Aveo",
+      "price": 12.00,
+      "category": "Frenos",
+      "img": "https://i.postimg.cc/Njp3c0dh/pastillas-freno-aveo.jpg",
+      "desc": "Pastillas de cerámica de alta durabilidad. No chillan."
+    },
+    {
+      "id": 203,
+      "name": "Amortiguadores Delanteros - Ford Fiesta",
+      "price": 65.00,
+      "category": "Suspensión",
+      "img": "https://i.postimg.cc/g2NCW0NQ/amortiguador-delantero-fiesta.jpg",
+      "desc": "Par de amortiguadores a gas. Mejora la estabilidad en baches."
+    },
+    {
+      "id": 204,
+      "name": "Filtro de Aceite - Hyundai Getz / Accent",
+      "price": 5.00,
+      "category": "Mantenimiento",
+      "img": "https://i.postimg.cc/MpdCSGdg/filtro-aceite-getz-accent.jpg",
+      "desc": "Filtro original Hyundai/Kia. Máxima filtración."
+    },
+    {
+      "id": 205,
+      "name": "Bomba de Agua - Toyota Hilux (Kavak)",
+      "price": 38.00,
+      "category": "Enfriamiento",
+      "img": "https://i.postimg.cc/JzPfLhPg/bomba-agua-hilux-kavak.jpg",
+      "desc": "Bomba de alta presión para motores 1GR-FE."
+    },
+    {
+      "id": 206,
+      "name": "Kit de Embrague (Croche) - Silverado 3500",
+      "price": 180.00,
+      "category": "Transmisión",
+      "img": "https://i.postimg.cc/Cxm3gKm3/kit-embrague-chevrolet-3500.jpg",
+      "desc": "Disco, prensa y collarín. Para trabajo pesado."
+    },
+    {
+      "id": 207,
+      "name": "Bujías Iridium - Honda Civic",
+      "price": 35.00,
+      "category": "Encendido",
+      "img": "https://i.postimg.cc/HkBqgLBN/bujias-iridium.jpg",
+      "desc": "Set de 4 bujías de larga duración. Mejora el arranque."
+    },
+    {
+      "id": 208,
+      "name": "Empacadura de Cámara - Mitsubishi Lancer",
+      "price": 25.00,
+      "category": "Motor",
+      "img": "https://i.postimg.cc/MGBmYPMF/empacadura-lancer.jpg",
+      "desc": "Amianto de alta temperatura. Sello garantizado."
+    }
+  ]
+}

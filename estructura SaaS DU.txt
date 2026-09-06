@@ -1,0 +1,246 @@
+digitaliza-urpin/
+│
+├── public/                          # Archivos públicos (frontend)
+│   ├── admin.html                   # Panel de administración (CRUD, pedidos, referidos)
+│   ├── menu.html                    # Menú público (catálogo + carrito)
+│   ├── index.html                   # Landing page principal
+│   │
+│   ├── css/
+│   │   └── styles.css               # Estilos personalizados (Tailwind + extras)
+│   │
+│   ├── js/
+│   │   ├── admin.js                 # Lógica del panel admin
+│   │   ├── menu-core.js             # Lógica del menú público (carrusel, productos)
+│   │   ├── cart.js                  # Carrito, WhatsApp y guardado en Firestore
+│   │   ├── pricing.js               # Cálculo de precios (USD, Bs., IVA)
+│   │   ├── currency.js              # Multi-monedas y tasas (VE/CO)
+│   │   └── index.js                 # Lógica de la landing page
+│   │
+│   ├── icons/                       # Íconos para PWA (opcional)
+│   │   ├── icon-192.png
+│   │   └── icon-512.png
+│   │
+│   └── sounds/                      # Sonidos para notificaciones (opcional)
+│       └── notification.mp3
+│
+├── database/                        # Backup de productos (JSON)
+│   └── productos.json               # Ejemplo de productos precargados
+│
+├── qrcodes/                         # Códigos QR generados automáticamente
+│   └── qr_cliente.png               # QR por cada cliente registrado
+│
+├── firebase.json                    # Configuración de Firebase Hosting
+├── firestore.rules                  # Reglas de seguridad de Firestore
+├── firestore.indexes.json           # Índices de Firestore (optimización)
+├── .firebaserc                      # Configuración del proyecto Firebase
+├── serviceAccountKey.json           # Credenciales de Firebase Admin (¡NO SUBIR A GIT!)
+├── main.py                          # Script para registrar clientes (multi-país)
+├── migrar-extras.js                 # Script para migrar extras (Node.js)
+├── package.json                     # Dependencias de Node.js
+├── package-lock.json                # Lock de dependencias
+└── README.md                        # Documentación del proyecto
+
+ESTRUCTURA EN FIRESTORE
+
+artifacts/
+└── digitaliza-urpin-2026/
+    └── public/
+        └── data/
+            ├── clientes/
+            │   ├── {cliente_id}/
+            │   │   ├── business/
+            │   │   │   ├── name: "Nombre del Negocio"
+            │   │   │   ├── accent: "Palabra Resaltada"
+            │   │   │   ├── whatsapp: "584120000000"
+            │   │   │   ├── type: "food" | "parts" | "bakery" | "store"
+            │   │   │   ├── exentoIVA: true | false
+            │   │   │   └── pais: "venezuela" | "colombia"
+            │   │   │
+            │   │   ├── products/
+            │   │   │   └── [
+            │   │   │         {
+            │   │   │           "id": "prod_abc123",
+            │   │   │           "name": "Producto",
+            │   │   │           "price": 10.50,
+            │   │   │           "category": "Categoría",
+            │   │   │           "desc": "Descripción del producto",
+            │   │   │           "img": "https://...",
+            │   │   │           "images": ["https://...", "https://..."],
+            │   │   │           "extras": [{ "nombre": "Extra", "precio": 1.50 }],
+            │   │   │           "active": true,
+            │   │   │           "createdAt": "2026-07-25T...",
+            │   │   │           "updatedAt": "2026-07-25T..."
+            │   │   │         }
+            │   │   │       ]
+            │   │   │
+            │   │   ├── referidos/
+            │   │   │   ├── codigo: "REF-XXXX-XXXX"
+            │   │   │   ├── referidosActivos: ["cliente1", "cliente2"]
+            │   │   │   ├── referidosPendientes: ["cliente3"]
+            │   │   │   ├── mesesGratisAcumulados: 0
+            │   │   │   └── mesesGratisUsados: 0
+            │   │   │
+            │   │   └── suscripcion/
+            │   │       ├── plan: "basico" | "pro" | "business"
+            │   │       ├── activo: true | false
+            │   │       ├── fechaInicio: "2026-07-25"
+            │   │       ├── fechaFin: "2026-08-25"
+            │   │       ├── productosMax: 10 | 50 | 9999
+            │   │       ├── extrasEnabled: true | false
+            │   │       └── dashboardEnabled: true | false
+            │   │
+            │   └── ...
+            │
+            └── pedidos/
+                └── {REF-XXXX-XXXX}/
+                    ├── referencia: "REF-XXXX-XXXX"
+                    ├── clienteId: "esthermendoza"
+                    ├── negocio: "TORTAS ESTHER"
+                    ├── fecha: "2026-07-25T15:30:00.000Z"
+                    ├── items: [
+                    │     {
+                    │       "nombre": "Mini Torta",
+                    │       "cantidad": 1,
+                    │       "precioUnitario": 5.50,
+                    │       "subtotal": 5.50,
+                    │       "extras": []
+                    │     }
+                    │   ]
+                    ├── totalUSD: 5.50
+                    ├── totalBS: 4059.00
+                    ├── exentoIVA: false
+                    ├── tasaBCV: 737.88
+                    ├── estado: "pendiente" | "pagado" | "entregado" | "cancelado"
+                    ├── pais: "venezuela" | "colombia"
+                    └── moneda: "Bs." | "COP"
+
+
+
+ESTRUTURA DE SEGURIDAD (FIRESTORE RULES)
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Clientes: lectura pública, escritura solo autenticada
+    match /artifacts/{appId}/public/data/clientes/{clienteId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Pedidos: lectura y escritura pública (para menús no autenticados)
+    match /artifacts/{appId}/public/data/pedidos/{pedidoId} {
+      allow read, write: if true;
+    }
+    
+    // Referidos: lectura y escritura pública
+    match /artifacts/{appId}/public/data/referidos/{referidoId} {
+      allow read, write: if true;
+    }
+  }
+}
+
+
+
+
+TEMAS VISUALES  (ESTILOS)
+
+const temas = {
+    food: {
+        primary: 'orange-500',
+        bg: 'slate-900',
+        label: 'Pedido',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-orange-900 via-red-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836'
+    },
+    parts: {
+        primary: 'blue-600',
+        bg: 'slate-900',
+        label: 'Cotización',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-slate-800 via-zinc-900 to-black',
+        wallpaper: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd'
+    },
+    bakery: {
+        primary: 'pink-500',
+        bg: 'rose-950',
+        label: 'Encargo',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-rose-950 via-pink-950 to-stone-950',
+        wallpaper: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b'
+    },
+    store: {
+        primary: 'emerald-600',
+        bg: 'zinc-900',
+        label: 'Compra',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-emerald-900 via-teal-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9'
+    }
+};
+
+
+💰 PLANES DE SUSCRIPCIÓN
+Plan	Productos	Extras	Dashboard	Precio
+Básico	10	❌	❌	$9.99/mes
+Pro	50	✅	✅	$19.99/mes
+Business	∞	✅	✅	$29.99/mes
+
+
+🌎 PAÍSES SOPORTADOS
+País	Moneda	Tasa	IVA	Formato
+Venezuela	Bs.	BCV	16%	es-VE
+Colombia	COP	TRM	19%	es-CO
+
+
+FLUJO DE DATOS
+
+1. Cliente entra al menú → menu-core.js
+2. Firebase lee datos de Firestore → clientes/{id}
+3. Cliente agrega producto al carrito → cart.js
+4. Cliente finaliza pedido → cart.js
+5. Pedido se guarda en Firestore → pedidos/{REF}
+6. Pedido se envía por WhatsApp → wa.me/{telefono}
+7. Admin muestra pedidos → admin.js
+8. Admin actualiza estado → admin.js
+9. Admin gestiona productos → admin.js
+
+
+COMANDOS UTILES
+
+# Desplegar hosting
+firebase deploy --only hosting
+
+# Desplegar reglas de Firestore
+firebase deploy --only firestore
+
+# Desplegar todo
+firebase deploy
+
+# Ejecutar localmente
+firebase serve
+
+# Registrar un cliente
+python main.py
+
+# Migrar extras (Node.js)
+node migrar-extras.js
+
+
+
+
+📝 NOTAS IMPORTANTES
+
+    serviceAccountKey.json → ¡NO SUBIR A GIT! Está en .gitignore
+
+    Firebase Blaze → Solo necesario si superas las 50,000 lecturas/día
+
+    ImgBB API Key → 8cf60d8646c39f74f88271f1fb63a73e (no cambiarla)
+
+    App Check → ReCAPTCHA v3: 6LcDST0tAAAAAIsL4Py1fORj7RKUEx-u-16fU0zD
+
+    Multi-país → Campo pais en business de cada cliente
+
+
+
+

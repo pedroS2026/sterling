@@ -1,0 +1,43 @@
+{
+  "business": {
+    "name": "LA FLOR",
+    "accent": "DE URPÍN",
+    "icon": "fa-bread-slice",
+    "type": "food",
+    "whatsapp": "584266662491"
+  },
+  "products": [
+    {
+      "id": 601,
+      "name": "Canilla Caliente (Unidad)",
+      "price": 0.50,
+      "category": "Panadería",
+      "img": "https://i.postimg.cc/qM9LCHgz/canilla.jpg",
+      "desc": "Pan recién horneado, crujiente por fuera y suave por dentro."
+    },
+    {
+      "id": 602,
+      "name": "Golfeado con Queso",
+      "price": 2.50,
+      "category": "Dulces",
+      "img": "https://i.postimg.cc/J49qBCtH/golfiao.jpg",
+      "desc": "Bañado en melao de papelón con una generosa tajada de queso de mano."
+    },
+    {
+      "id": 603,
+      "name": "Café Capuchino Grande",
+      "price": 3.00,
+      "category": "Cafetería",
+      "img": "https://i.postimg.cc/rFvJt2zd/capuchino.jpg",
+      "desc": "Expresso con leche espumada y un toque de canela."
+    },
+    {
+      "id": 604,
+      "name": "Torta de Piña (Porción)",
+      "price": 2.00,
+      "category": "Dulces",
+      "img": "https://i.postimg.cc/xTWRbVqb/torta-pina-porcion.jpg",
+      "desc": "Bizcocho húmedo con caramelo y rodajas de piña fresca."
+    }
+  ]
+}

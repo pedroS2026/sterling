@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitaliza Urpín | Catálogo Inteligente</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        safelist: [
+            'bg-orange-500', 'bg-blue-600', 'bg-pink-500', 'bg-emerald-600',
+            'bg-slate-900', 'bg-stone-900', 'bg-zinc-900',
+            'text-orange-500', 'text-blue-600', 'text-pink-500', 'text-emerald-600',
+            'border-orange-500', 'border-blue-600', 'border-pink-500', 'border-emerald-600',
+            'from-orange-900', 'via-red-900', 'to-slate-950',
+            'from-slate-800', 'via-zinc-900', 'to-black',
+            'from-amber-100', 'via-orange-100', 'to-yellow-50',
+            'from-emerald-900', 'via-teal-900', 'to-slate-950',
+            'from-stone-800', 'via-stone-900', 'to-black', 'text-white'
+        ]
+    }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <!-- Fuente Great Vibes para el título -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <!-- Firebase App Check -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js"></script>
+
+    <script type="module" src="./js/menu-core.js?v=20260903"></script>
+</head>
+
+<div id="dynamic-bg" class="fixed inset-0 -z-10 bg-cover bg-center opacity-20 blur-sm scale-110 transition-all duration-700"></div>
+
+<body id="app-body" class="max-w-md mx-auto min-h-screen relative overflow-x-hidden bg-slate-100 transition-all duration-700">
+
+    <div id="loader-global" class="fixed inset-0 bg-white z-[1000] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-slate-100 border-t-emerald-600 rounded-full animate-spin"></div>
+        <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
+    </div>
+
+    <!-- Header sin tasa BCV -->
+    <header id="main-header" class="bg-gradient-to-b from-black/80 to-transparent p-6 text-center shadow-lg">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 id="shop-name" class="text-4xl font-normal italic tracking-wide leading-none text-white drop-shadow-lg" 
+                    style="font-family: 'Great Vibes', cursive;">
+                    Cargando...
+                </h1>
+                <p class="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-3">Precios en USD • Bs. de referencia</p>
+            </div>
+            <button onclick="toggleCart()" class="relative active:scale-95 transition-transform">
+                <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-xl">
+                    <i id="cart-icon" class="fas fa-shopping-basket text-xl text-white"></i>
+                </div>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-black hidden border-2 border-slate-900 shadow-lg">0</span>
+            </button>
+        </div>
+        <div class="mt-10 relative">
+            <input type="text" onkeyup="buscar(this.value)" placeholder="Buscar producto..." class="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-[1.5rem] py-5 pl-12 text-xs text-white outline-none focus:bg-white/20 transition-all font-bold uppercase placeholder:text-white/30">
+            <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
+        </div>
+    </header>
+
+    <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-8 py-6"></div>
+    <main id="product-list" class="px-8 pb-32"></main>
+
+    <!-- Modal de detalle con carrusel -->
+    <div id="detail-view" class="fixed inset-0 z-[500] bg-white hidden flex flex-col">
+        <div id="detail-img-container" class="relative h-64 bg-slate-100 rounded-b-3xl flex items-center justify-center">
+            <img id="detail-img" class="max-h-full max-w-full object-contain p-4" src="">
+            <button onclick="cerrarDetalle()" class="absolute top-4 left-4 bg-black/30 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-black/50">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        <div class="flex-1 p-6 overflow-y-auto">
+            <p id="detail-cat" class="text-xs font-light italic text-slate-400 mb-1">Cargando...</p>
+            <h2 id="detail-name" class="text-2xl font-light italic text-slate-800 mb-2">Cargando...</h2>
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl font-light italic text-slate-900">$<span id="detail-price-usd"></span></span>
+                <span class="text-md font-light italic text-emerald-600"><span id="detail-price-bs"></span> Bs.</span>
+            </div>
+            <div id="detail-desc" class="text-sm text-slate-600 mb-4"></div>
+            <div id="product-modifiers" class="mb-4"></div>
+            <div class="mt-4">
+                <button id="detail-add-btn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-sm">Añadir al Carrito</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carrito -->
+    <div id="cart-view" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
+        <div class="w-full bg-white rounded-t-[3.5rem] p-10 shadow-2xl relative max-w-md mx-auto">
+            <div class="w-12 h-1 bg-slate-100 rounded-full absolute top-4 left-1/2 -translate-x-1/2"></div>
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="font-light text-2xl italic tracking-wide">Tu Compra</h2>
+                <button onclick="toggleCart()"><i class="fas fa-times text-xl text-slate-300"></i></button>
+            </div>
+            <div id="cart-items" class="max-h-[40vh] overflow-y-auto no-scrollbar mb-8"></div>
+            <div class="bg-slate-50 rounded-[2.5rem] p-6 mb-8 flex justify-between items-end border border-slate-100">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Total Final</p>
+                    <h3 class="text-4xl font-black text-slate-900">$<span id="total-usd">0.00</span></h3>
+                </div>
+                <p class="text-lg font-black text-emerald-600 italic"><span id="total-bs">0,00</span> Bs.</p>
+            </div>
+
+            <!-- ========== CAMPO DE MESA (SOLO PARA NEGOCIOS DE COMIDA) ========== -->
+            <div id="mesa-container" class="mb-4 hidden">
+                <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Número de Mesa</label>
+                <input type="number" id="input-mesa" placeholder="Ej: 5" min="1" max="99" 
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all">
+            </div>
+            <!-- =========================================================== -->
+
+            <button onclick="enviarWhatsApp()" class="w-full bg-green-500 text-white py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+                <i class="fab fa-whatsapp text-2xl"></i>
+                <span id="btn-send-text">Finalizar Pedido</span>
+            </button>
+            <p id="iva-note" class="text-[9px] text-center text-slate-400 font-bold uppercase mt-4 tracking-widest"></p>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] bg-slate-900 text-white px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hidden"></div>
+
+</body>
+</html>

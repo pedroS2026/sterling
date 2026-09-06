@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitaliza Urpín | Digitalización de Negocios en Barcelona</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <!-- Estilos adicionales para index -->
+    <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+    </style>
+    <!-- NO cargues App Check aquí (ya se importa en el módulo) -->
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+    <!-- ========== ROUTER PARA URLS AMIGABLES ========== -->
+    <script>
+        (function() {
+            const path = window.location.pathname;
+            const segments = path.split('/').filter(s => s !== '');
+
+            if (segments.length === 0) return;
+            if (segments[0] === 'admin') return;
+            if (segments[0] === 'menu.html') return;
+
+            if (segments.length === 1) {
+                const clienteId = segments[0];
+                window.location.replace(`/menu.html?id=${clienteId}`);
+            }
+        })();
+    </script>
+    <!-- ================================================ -->
+
+    <!-- NAVBAR -->
+    <nav class="fixed w-full z-50 px-6 py-4">
+        <div class="max-w-6xl mx-auto glass rounded-2xl p-4 flex justify-between items-center shadow-sm border border-slate-200/50">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fas fa-qrcode text-xl"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight text-slate-900">
+                    Digitaliza <span class="text-blue-700">Urpín</span>
+                </span>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="https://wa.me/584266662491?text=Hola,%20deseo%20más%20información" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-all text-sm">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="pt-32 pb-16 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Barcelona, Anzoátegui</span>
+            <h1 class="text-5xl md:text-7xl font-extrabold mt-6 mb-6 leading-tight tracking-tighter text-slate-950">
+                Digitaliza tu negocio y <span class="gradient-text">vende más</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-700 mb-10 max-w-2xl mx-auto font-medium">
+                Creamos menús QR, catálogos interactivos y posicionamiento en Google Maps para negocios modernos.
+            </p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <select id="opcion-servicio" class="px-6 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-900 font-semibold focus:outline-none focus:border-blue-600 shadow-sm cursor-pointer w-full md:w-auto">
+                    <option value="" disabled selected>¿Qué servicio buscas?</option>
+                    <option value="Menú Digital QR">📱 Menú Digital QR</option>
+                    <option value="Catálogo Interactivo">🖼️ Catálogo Interactivo</option>
+                    <option value="Posicionamiento Maps">📍 Google Maps Pro</option>
+                </select>
+                <button onclick="enviarPresupuesto()" class="bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-800 transition-all w-full md:w-auto">
+                    Pedir Presupuesto
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- EJEMPLOS -->
+    <section id="ejemplos" class="py-16 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <a href="/burgers" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-orange-400 transition-all group text-center">
+                    <div class="w-16 h-16 bg-orange-100 text-orange-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-hamburger"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Hamburguesas</h3>
+                </a>
+                <a href="/lanona" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-red-400 transition-all group text-center">
+                    <div class="w-16 h-16 bg-red-100 text-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-pizza-slice"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Pizzerías</h3>
+                </a>
+                <a href="/gourmet" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-blue-400 transition-all group text-center">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Gourmet</h3>
+                </a>
+                <a href="/luisr" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-slate-500 transition-all group text-center">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Ferreterías</h3>
+                </a>
+                <a href="/flor" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-amber-500 transition-all group text-center">
+                    <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-bread-slice"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Panaderías</h3>
+                </a>
+                <a href="/repuestos" class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100 hover:border-blue-900 transition-all group text-center">
+                    <div class="w-16 h-16 bg-blue-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl group-hover:scale-105 transition-transform">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm uppercase tracking-tight text-slate-800">Repuestos</h3>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEO LOCAL -->
+    <section class="py-20 px-6 bg-white border-t border-slate-100">
+        <div class="max-w-5xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+                <i class="fas fa-map-marker-alt"></i> SEO Local Google Maps
+            </div>
+            <h2 class="text-4xl md:text-5xl font-extrabold tracking-tighter mb-6 text-slate-950">
+                Haz que tu negocio aparezca en <br class="hidden md:block">
+                <span class="gradient-text">Google Maps</span>
+            </h2>
+            <p class="text-slate-700 text-lg max-w-2xl mx-auto mb-12 font-medium">
+                Optimizamos tu perfil de Google Business para que más personas encuentren tu negocio, te escriban y visiten tu local.
+            </p>
+            <div class="grid md:grid-cols-3 gap-6 text-left">
+                <div class="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                    <div class="text-emerald-700 text-3xl mb-5"><i class="fas fa-search-location"></i></div>
+                    <h3 class="font-black text-lg mb-3 uppercase text-slate-900">Posicionamiento Local</h3>
+                    <p class="text-slate-600 text-sm font-medium">Mejoramos la visibilidad de tu negocio en búsquedas locales y Google Maps.</p>
+                </div>
+                <div class="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                    <div class="text-blue-700 text-3xl mb-5"><i class="fas fa-star"></i></div>
+                    <h3 class="font-black text-lg mb-3 uppercase text-slate-900">Optimización del Perfil</h3>
+                    <p class="text-slate-600 text-sm font-medium">Configuración profesional de horarios, fotos, categorías y descripción del negocio.</p>
+                </div>
+                <div class="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                    <div class="text-orange-600 text-3xl mb-5"><i class="fas fa-chart-line"></i></div>
+                    <h3 class="font-black text-lg mb-3 uppercase text-slate-900">Más Clientes</h3>
+                    <p class="text-slate-600 text-sm font-medium">Aumenta mensajes, llamadas y visitas físicas desde Google Maps.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-12 px-6 text-center border-t border-slate-200">
+        <p class="font-black text-slate-900 mb-2 uppercase tracking-tight">Digitaliza Urpín</p>
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-6">Barcelona • Anzoátegui • Venezuela</p>
+        <div class="flex justify-center">
+            <a href="https://wa.me/584266662491" class="text-slate-500 hover:text-emerald-600 transition-colors text-2xl">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>
+    </footer>
+
+    <!-- ========== CARGA COMO MÓDULO ========== -->
+    <script type="module" src="/js/index.js"></script>
+</body>
+</html>

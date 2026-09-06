@@ -1,0 +1,67 @@
+{
+  "business": {
+    "name": "Elite Sport",
+    "accent": "Urpín",
+    "whatsapp": "584266662491",
+    "type": "store",
+    "instagram": "@elitesporturpin"
+  },
+  "products": [
+    {
+      "id": 101,
+      "name": "Zapatillas Trail Running X",
+      "category": "Caballero",
+      "price": 45.00,
+      "img": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 102,
+      "name": "Franela Dry-Fit Pro",
+      "category": "Caballero",
+      "price": 15.00,
+      "img": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 201,
+      "name": "Leggings Yoga High-Waist",
+      "category": "Dama",
+      "price": 22.00,
+      "img": "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 202,
+      "name": "Top Deportivo Impact",
+      "category": "Dama",
+      "price": 18.00,
+      "img": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 301,
+      "name": "Zapatos Futbolito Kid",
+      "category": "Niños",
+      "price": 30.00,
+      "img": "https://images.unsplash.com/photo-1511886929837-354d827aae26?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 302,
+      "name": "Conjunto Deportivo Infantil",
+      "category": "Niños",
+      "price": 25.00,
+      "img": "https://images.unsplash.com/photo-1621454523226-eb4f392ce847?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 401,
+      "name": "Smartwatch Fit V8",
+      "category": "Accesorios",
+      "price": 35.00,
+      "img": "https://images.unsplash.com/photo-1508685096489-7aac291ba597?q=80&w=400&auto=format&fit=crop"
+    },
+    {
+      "id": 402,
+      "name": "Bolso Gym Impermeable",
+      "category": "Accesorios",
+      "price": 12.00,
+      "img": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=400&auto=format&fit=crop"
+    }
+  ]
+}

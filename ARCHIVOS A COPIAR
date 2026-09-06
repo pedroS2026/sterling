@@ -1,0 +1,85 @@
+🟢 CARPETAS Y ARCHIVOS QUE DEBES COPIAR SÍ O SÍ (Imprescindibles)
+
+Esto es el corazón del sistema y los datos de tus clientes:
+
+    Carpeta database → Contiene los .json de todos tus clientes (burgers.json, flor.json, etc.). ¡Es tu base de datos local!
+
+    Carpeta public → Contiene la web/app frontend (HTML, CSS, JS). Sin esto, el menú no se ve.
+
+    Carpeta qrcodes → Contiene los códigos QR generados para cada cliente. (Aunque puedes regenerarlos, mejor respaldarlos).
+
+    Archivos raíz .py y .js:
+
+        main.py (registro y generación de QR)
+
+        añadir_extras.py (actualización de extras)
+
+        migrar-extras.js (migración de datos)
+
+    Archivos de configuración de Firebase:
+
+        serviceAccountKey.json (¡MUY IMPORTANTE!) → Es la llave para conectar con Firestore. Sin esto, los scripts no funcionan.
+
+        firebase.json
+
+        firestore.rules
+
+        firestore.indexes.json
+
+    Archivos de dependencias:
+
+        package.json y package-lock.json (para instalar las dependencias de Node en la otra máquina).
+
+🟡 CARPETAS QUE PUEDES COPIAR (Opcionales / Documentación)
+
+Si quieres tener toda la documentación a mano, copia estos (no afectan al funcionamiento del código):
+
+    DOCUMENTOS DIGITALIZA-URPIN
+
+    Estrategia de venta DU
+
+    optimizacion DU
+
+    Planteamientos DU
+
+    Tarjetas Digitalizacion Urpin - MODO OFFLINE.pdf
+
+    digitaliza-urpin.rar (esto parece un respaldo antiguo comprimido; si pesa mucho, déjalo).
+
+🔴 CARPETAS QUE NO DEBES COPIAR (Para ahorrar tiempo y espacio)
+
+Estas carpetas son autogeneradas y dependen del sistema operativo o del hardware. Es mejor recrearlas en la otra máquina desde cero:
+
+    node_modules → Ocupa cientos de MB. En la nueva máquina, solo abre una terminal y escribe npm install (usando el package.json que copiaste) y se generará sola.
+
+    venv → Entorno virtual de Python. Contiene rutas absolutas de tu sistema. En la nueva máquina, crea uno nuevo con python -m venv venv y luego instala las librerías con pip install firebase-admin qrcode pillow (o las que uses).
+
+    __pycache__ → Caché de Python. Se regenera automáticamente al ejecutar los scripts.
+
+    (Opcional) imagenes → Si son imágenes de prueba o assets que no uses en el frontend, revisa si realmente las necesitas. Si son parte del public/, ya estarían dentro de esa carpeta.
+
+⚙️ FLUJO DE TRABAJO RECOMENDADO (De i5 a x61, o viceversa)
+
+Cuando te cambies de equipo, haz esto para no perder tiempo:
+
+    Copia la lista de archivos VERDES (los imprescindibles) en un USB o disco externo.
+
+    En la máquina destino, pega todo en la misma estructura de carpetas.
+
+    Instala dependencias:
+
+        Abre terminal en la carpeta raíz.
+
+        Para Python: pip install -r requirements.txt (si no tienes el .txt, instala manualmente firebase-admin, qrcode y pillow).
+
+        Para Node: npm install (esto creará la carpeta node_modules).
+
+    Listo. Ya puedes ejecutar main.py y añadir_extras.py sin problemas.
+
+📝 Resumen rápido (Checklist para copiar):
+Acción	Elementos
+Copia siempre	database/, public/, qrcodes/, *.py, *.js, *.json (todos), *.rules
+Recrea en destino	node_modules/ (con npm install), venv/ (con python -m venv venv)
+Ignora (no copies)	__pycache__/, digitaliza-urpin.rar (si pesa mucho), imagenes/ (si no son críticas)
+
+Si usas Git, te recomiendo añadir node_modules/, venv/ y __pycache__/ al archivo .gitignore para no subirlos nunca al repositorio. ¡Espero que te sirva!
