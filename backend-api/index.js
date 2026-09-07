@@ -5,13 +5,32 @@ const admin = require('firebase-admin');
 const WayuPay = require('wayu-js-sdk');
 require('dotenv').config();
 
-// ✅ INICIALIZAR FIREBASE (UNA SOLA VEZ)
-// Cargar el archivo serviceAccountKey.json directamente
-const serviceAccount = require('./serviceAccountKey.json');
+// ========== INICIALIZAR FIREBASE (UNA SOLA VEZ) ==========
+let serviceAccount;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+// Prioridad 1: Variable de entorno (Vercel)
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  console.log('✅ Firebase inicializado con variable de entorno (Vercel)');
+} else {
+  // Prioridad 2: Archivo local (desarrollo)
+  try {
+    serviceAccount = require('./serviceAccountKey.json');
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log('✅ Firebase inicializado con archivo local');
+  } catch (error) {
+    // Prioridad 3: Fallback a applicationDefault (útil para otros entornos)
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+    console.log('✅ Firebase inicializado con applicationDefault (fallback)');
+  }
+}
 
 const db = admin.firestore();
 const APP_ID = 'digitaliza-urpin-2026';
@@ -35,7 +54,7 @@ app.post('/api/crear-link-pago', async (req, res) => {
     const result = await wayu.checkout.generatePaymentUrl({
       amount: {
         value: parseFloat(monto),
-        currency: 'USD', // o 'VES'
+        currency: 'USD',
       },
       product_name: productoNombre || `Pedido #${pedidoId}`,
       product_description: productoDescripcion || 'Pago en Digitaliza Urpín',
