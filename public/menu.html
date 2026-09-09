@@ -97,6 +97,7 @@
     </div>
 
     <!-- Carrito -->
+        <!-- Carrito -->
     <div id="cart-view" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
         <div class="w-full bg-white rounded-t-[3.5rem] p-10 shadow-2xl relative max-w-md mx-auto">
             <div class="w-12 h-1 bg-slate-100 rounded-full absolute top-4 left-1/2 -translate-x-1/2"></div>
@@ -121,10 +122,21 @@
             </div>
             <!-- =========================================================== -->
 
-            <button onclick="enviarWhatsApp()" class="w-full bg-green-500 text-white py-6 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
-                <i class="fab fa-whatsapp text-2xl"></i>
-                <span id="btn-send-text">Finalizar Pedido</span>
+            <!-- ========== DOS BOTONES ========== -->
+            <!-- Botón 1: PAGAR CON WAYU PAY (solo pago) -->
+            <button id="btn-pagar-wayu" onclick="pagarConWayu()" 
+                    class="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all mb-3">
+                <i class="fas fa-credit-card text-2xl"></i>
+                <span>1. PAGAR CON WAYU PAY</span>
             </button>
+
+            <!-- Botón 2: Enviar pedido a WhatsApp (manual, después de pagar) -->
+            <button id="btn-enviar-whatsapp" onclick="enviarWhatsApp()" 
+                    class="w-full bg-green-500 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+                <i class="fab fa-whatsapp text-2xl"></i>
+                <span>2. Enviar pedido a WhatsApp (ya pagado)</span>
+            </button>
+
             <p id="iva-note" class="text-[9px] text-center text-slate-400 font-bold uppercase mt-4 tracking-widest"></p>
         </div>
     </div>

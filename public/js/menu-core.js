@@ -2,6 +2,10 @@
  * Digitaliza Urpín - Módulo Central del Menú
  * Versión con paletas predefinidas por tipo de restaurante
  * Incluye: fastfood, restaurant, gourmet, pizzeria, cafe, mariscos, bakery, parts, store
+ * 
+ * MODIFICADO: Integración con dos botones en el carrito:
+ * 1. PAGAR CON WAYU PAY (solo pago)
+ * 2. Enviar pedido a WhatsApp (manual, después de pagar)
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -9,7 +13,8 @@ import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasej
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 import { calcularPrecios, getConfigPaisLocal, getEmojiPaisLocal } from './pricing.js';
 import { PAISES, obtenerTasa, formatearPrecio } from './currency.js';
-import { carrito, agregarAlCarrito, modificarCantidad, enviarPedidoWhatsApp, actualizarCarritoUI } from './cart.js';
+// ========== IMPORTAR AMBAS FUNCIONES ==========
+import { carrito, agregarAlCarrito, modificarCantidad, enviarPedidoWhatsApp, actualizarCarritoUI, pagarConWayuPay } from './cart.js';
 
 // ==================== CONFIGURACIÓN DE FIREBASE ====================
 const firebaseConfig = {
@@ -183,7 +188,14 @@ window.modificar = (id, delta) => {
     modificarCantidad(id, delta, actualizarCarritoUI, configNegocio.exentoIVA);
 };
 
-window.enviarWhatsApp = () => enviarPedidoWhatsApp(configNegocio, CLIENTE_ID, TASA_BCV);
+// ========== DOS FUNCIONES PARA LOS BOTONES ==========
+window.pagarConWayu = () => {
+    pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV);
+};
+
+window.enviarWhatsApp = () => {
+    enviarPedidoWhatsApp(configNegocio, CLIENTE_ID, TASA_BCV);
+};
 
 // ==================== VARIABLES CARRUSEL ====================
 let carruselIndice = 0;
