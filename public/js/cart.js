@@ -1,6 +1,6 @@
 /**
  * Digitaliza Urpín - Módulo del Carrito
- * VERSIÓN CON ESTADOS: NO PAGADO / PAGADO
+ * VERSIÓN DE UN SOLO BOTÓN: PAGAR Y ENVIAR PEDIDO
  */
 
 import { calcularPrecios, APP_SETTINGS, getConfigPaisLocal } from './pricing.js';
@@ -267,42 +267,19 @@ export function actualizarCarritoUI(exentoIVA = false) {
         ivaNoteEl.innerText = nota;
     }
 
-    // ========== LÓGICA DE BOTONES CON ESTADOS ==========
-    const btnWhatsApp = document.getElementById('btn-enviar-whatsapp');
+    // ========== MOSTRAR/OCULTAR BOTÓN ÚNICO ==========
     const btnPagar = document.getElementById('btn-pagar-wayu');
-    const ultimoPedidoPagado = localStorage.getItem('ultimoPedidoPagado');
-
-    if (btnWhatsApp && btnPagar) {
-        if (carrito.length === 0 && !ultimoPedidoPagado) {
-            // Sin productos y sin pedido pagado: ocultar ambos
-            btnWhatsApp.style.display = 'none';
+    if (btnPagar) {
+        if (carrito.length === 0) {
             btnPagar.style.display = 'none';
-        } else if (carrito.length === 0 && ultimoPedidoPagado) {
-            // Sin productos pero con pedido pagado: mostrar solo WhatsApp en VERDE con "PAGADO"
-            btnWhatsApp.style.display = 'flex';
-            btnPagar.style.display = 'none';
-
-            btnWhatsApp.className = 'w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all';
-            const spanTexto = btnWhatsApp.querySelector('span');
-            if (spanTexto) {
-                spanTexto.innerText = `Enviar pedido ${ultimoPedidoPagado} a WhatsApp (PAGADO)`;
-            }
         } else {
-            // Con productos en carrito: mostrar ambos botones
-            btnWhatsApp.style.display = 'flex';
             btnPagar.style.display = 'flex';
-
-            btnWhatsApp.className = 'w-full bg-amber-500 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all';
-            const spanTexto = btnWhatsApp.querySelector('span');
-            if (spanTexto) {
-                spanTexto.innerText = '2. Enviar pedido a WhatsApp (NO PAGADO)';
-            }
         }
     }
 }
 
-// ==================== FUNCIÓN 1: PAGAR CON WAYU PAY ====================
-export async function pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV) {
+// ==================== FUNCIÓN ÚNICA: PAGAR Y ENVIAR PEDIDO ====================
+export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
     if (carrito.length === 0) {
         notificar('❌ El carrito está vacío');
         return;
@@ -314,12 +291,14 @@ export async function pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV) {
     const pais = negocio.pais || 'venezuela';
     const config = getConfigPaisLocal(pais);
     const moneda = config.moneda || 'Bs.';
+    const telefono = (negocio.whatsapp || '584120000000').replace(/\D/g, '');
 
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).slice(2, 6).toUpperCase();
     const referencia = `REF-${timestamp.slice(-4)}-${random}`;
 
     let totalCalculadoUSD = 0;
+    let itemsDetalle = [];
     let pedidoData = {
         referencia: referencia,
         clienteId: CLIENTE_ID,
@@ -341,175 +320,6 @@ export async function pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV) {
             type: negocio.type,
             exentoIVA: exento
         }
-    };
-
-    const deliveryActivo = carrito.some(item => item.tieneDelivery === true);
-    const deliveryMonto = configNegocio.deliveryRecargo?.porcentaje || 3;
-
-    for (const item of carrito) {
-        const productoOriginal = obtenerProductoOriginal(item.idOriginal);
-        if (!productoOriginal) {
-            console.warn("Producto original no encontrado:", item.idOriginal);
-            continue;
-        }
-
-        const precioBaseOriginal = parseFloat(productoOriginal.price || 0);
-        if (isNaN(precioBaseOriginal) || precioBaseOriginal < 0) continue;
-
-        const selectedExtras = item.selectedExtras || [];
-        let costoExtras = 0;
-        const extrasDetalle = [];
-        let deliveryInfo = null;
-
-        for (const extra of selectedExtras) {
-            const precioExtra = typeof extra.precio === 'number' ? extra.precio : 0;
-            if (extra.esDeliveryFlag === true) continue;
-            if (extra.esDelivery === true) {
-                deliveryInfo = { nombre: extra.nombre || 'Delivery', precio: 0 };
-            } else if (precioExtra > 0) {
-                costoExtras += precioExtra;
-                extrasDetalle.push({ nombre: extra.nombre || 'Extra', precio: precioExtra });
-            } else {
-                extrasDetalle.push({ nombre: extra.nombre || 'Extra', precio: 0 });
-            }
-        }
-
-        const precioUnitarioReal = precioBaseOriginal + costoExtras;
-        const cantidad = item.qty || 0;
-        const subtotalReal = precioUnitarioReal * cantidad;
-        totalCalculadoUSD += subtotalReal;
-
-        pedidoData.items.push({
-            id: productoOriginal.id,
-            nombre: productoOriginal.name,
-            cantidad: cantidad,
-            precioBase: precioBaseOriginal,
-            extras: extrasDetalle,
-            delivery: deliveryInfo,
-            precioUnitario: precioUnitarioReal,
-            subtotal: subtotalReal
-        });
-    }
-
-    if (pedidoData.items.length === 0) {
-        notificar('❌ Error: productos no válidos en el carrito');
-        return;
-    }
-
-    let totalConDelivery = totalCalculadoUSD;
-    let deliveryAplicado = false;
-    if (deliveryActivo && totalCalculadoUSD > 0) {
-        totalConDelivery = totalCalculadoUSD + deliveryMonto;
-        deliveryAplicado = true;
-    }
-
-    let totalConIVA = totalConDelivery;
-    if (!exento) {
-        totalConIVA = totalConDelivery * (1 + config.ivaDefault);
-    }
-    const tasaBCV = TASA_BCV || 0;
-    const totalFinalLocal = Math.ceil(totalConIVA * tasaBCV);
-
-    pedidoData.totalUSD = totalConDelivery;
-    pedidoData.totalLocal = totalFinalLocal;
-
-    try {
-        const docRef = doc(db, "artifacts", APP_ID, "public", "data", "pedidos", referencia);
-        await setDoc(docRef, pedidoData);
-        console.log("✅ Pedido guardado en Firestore:", referencia);
-    } catch (error) {
-        console.error("❌ Error al guardar pedido:", error);
-        notificar('❌ Error al guardar el pedido. Intenta de nuevo.');
-        return;
-    }
-
-    const productoNombre = `Pedido ${referencia}`;
-    const productoDescripcion = `Pedido para ${nombreNegocio}`;
-
-    // Guardar en localStorage para la redirección después del pago
-    localStorage.setItem('ultimoClienteId', CLIENTE_ID);
-    localStorage.setItem('pedidoPendiente', referencia);
-    localStorage.setItem('clienteIdPendiente', CLIENTE_ID);
-
-    notificar('🔄 Generando link de pago...');
-
-    try {
-        const response = await fetch(`${API_URL}/api/crear-link-pago`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                monto: parseFloat(totalConDelivery),
-                pedidoId: referencia,
-                clienteId: CLIENTE_ID,
-                productoNombre: productoNombre,
-                productoDescripcion: productoDescripcion
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error ${response.status}: ${errorText}`);
-        }
-
-        const data = await response.json();
-        if (!data.success) {
-            throw new Error(data.error || 'Error desconocido al generar link de pago');
-        }
-
-        mostrarBotonPago(data.link);
-        notificar('✅ Link de pago generado. Realiza el pago para confirmar el pedido.');
-
-    } catch (error) {
-        console.error('❌ Error al generar link de pago:', error);
-        notificar(`❌ Error al generar el link de pago: ${error.message}`);
-    }
-}
-
-// ==================== FUNCIÓN 2: ENVIAR PEDIDO POR WHATSAPP ====================
-export async function enviarPedidoWhatsApp(configNegocio, CLIENTE_ID, TASA_BCV) {
-    const pedidoPagado = localStorage.getItem('ultimoPedidoPagado');
-
-    // Si no hay carrito y hay pedido pagado: enviar mensaje de "PAGADO"
-    if (carrito.length === 0 && pedidoPagado) {
-        await enviarPedidoWhatsAppConEstado(configNegocio, pedidoPagado, true);
-        return;
-    }
-
-    // Si no hay carrito y no hay pedido pagado: nada que enviar
-    if (carrito.length === 0 && !pedidoPagado) {
-        notificar('❌ El carrito está vacío');
-        return;
-    }
-
-    // Si hay productos en el carrito: enviar pedido NUEVO (NO PAGADO)
-    const negocio = configNegocio || {};
-    const telefono = (negocio.whatsapp || '584120000000').replace(/\D/g, '');
-    const exento = negocio.exentoIVA === true || negocio.exentoIVA === "true";
-    const nombreNegocio = escapeHtml(negocio.name || 'Digitaliza Urpín');
-    const pais = negocio.pais || 'venezuela';
-    const config = getConfigPaisLocal(pais);
-    const moneda = config.moneda || 'Bs.';
-
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-    const referencia = `REF-${timestamp.slice(-4)}-${random}`;
-
-    let totalCalculadoUSD = 0;
-    let itemsDetalle = [];
-    let pedidoData = {
-        referencia: referencia,
-        clienteId: CLIENTE_ID,
-        negocio: nombreNegocio,
-        pais: pais,
-        fecha: new Date().toISOString(),
-        items: [],
-        totalUSD: 0,
-        totalLocal: 0,
-        exentoIVA: exento,
-        tasaBCV: TASA_BCV || 0,
-        estado: 'pendiente',
-        moneda: moneda,
-        pagoConfirmado: false
     };
 
     const deliveryActivo = carrito.some(item => item.tieneDelivery === true);
@@ -593,124 +403,83 @@ export async function enviarPedidoWhatsApp(configNegocio, CLIENTE_ID, TASA_BCV) 
     pedidoData.totalUSD = totalConDelivery;
     pedidoData.totalLocal = totalFinalLocal;
 
+    // Guardar pedido en Firestore
     try {
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "pedidos", referencia);
         await setDoc(docRef, pedidoData);
-        console.log("✅ Pedido guardado en Firestore (NO PAGADO):", referencia);
+        console.log("✅ Pedido guardado en Firestore:", referencia);
     } catch (error) {
         console.error("❌ Error al guardar pedido:", error);
         notificar('❌ Error al guardar el pedido. Intenta de nuevo.');
         return;
     }
 
-    // Construir mensaje WhatsApp con "NO PAGADO"
-    let mensaje = `*🛒 NUEVO PEDIDO - ${nombreNegocio}*\n`;
-    mensaje += `📋 *REF: ${referencia}*\n`;
-    mensaje += `📅 ${new Date().toLocaleString('es-VE')}\n`;
-    mensaje += `🌎 ${config.emoji || '🌎'} ${config.nombre || pais}\n`;
-    mensaje += `❌ *ESTADO: NO PAGADO*\n`;
-    mensaje += `--------------------------\n\n`;
+    // ========== GUARDAR DATOS PARA DESPUÉS DEL PAGO ==========
+    // Guardamos el ID del cliente y la referencia para que pago-exitoso.html los use
+    localStorage.setItem('ultimoClienteId', CLIENTE_ID);
+    localStorage.setItem('pedidoPendiente', referencia);
+    localStorage.setItem('pedidoPendienteData', JSON.stringify({
+        referencia,
+        clienteId: CLIENTE_ID,
+        negocio: nombreNegocio,
+        telefono,
+        moneda,
+        totalUSD: totalConDelivery,
+        totalLocal: totalFinalLocal,
+        items: itemsDetalle,
+        deliveryAplicado,
+        deliveryMonto,
+        exento,
+        ivaDefault: config.ivaDefault,
+        pais,
+        configEmoji: config.emoji || '🌎',
+        configNombre: config.nombre || pais,
+        configFormatoLocal: config.formatoLocal || 'es-VE',
+        configDecimales: config.decimales || 0
+    }));
 
-    for (const detalle of itemsDetalle) {
-        mensaje += `✅ *${detalle.cantidad}x* ${escapeHtml(detalle.nombre)}\n`;
-        if (detalle.extras && detalle.extras.length > 0) {
-            const extrasConPrecio = detalle.extras.filter(e => e.precio > 0);
-            const extrasSinPrecio = detalle.extras.filter(e => e.precio === 0);
-            if (extrasConPrecio.length > 0) {
-                mensaje += `   *Extras:*\n`;
-                for (const extra of extrasConPrecio) {
-                    mensaje += `      + ${escapeHtml(extra.nombre)} (+$${extra.precio.toFixed(2)})\n`;
-                }
-            }
-            if (extrasSinPrecio.length > 0) {
-                const nombres = extrasSinPrecio.map(e => escapeHtml(e.nombre)).join(', ');
-                mensaje += `   *Opciones:* ${nombres}\n`;
-            }
+    // Generar link de pago
+    const productoNombre = `Pedido ${referencia}`;
+    const productoDescripcion = `Pedido para ${nombreNegocio}`;
+
+    notificar('🔄 Generando link de pago...');
+
+    try {
+        const response = await fetch(`${API_URL}/api/crear-link-pago`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                monto: parseFloat(totalConDelivery),
+                pedidoId: referencia,
+                clienteId: CLIENTE_ID,
+                productoNombre: productoNombre,
+                productoDescripcion: productoDescripcion
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error ${response.status}: ${errorText}`);
         }
-        mensaje += `   *Precio:* $${detalle.precioUnitario.toFixed(2)}\n`;
-        mensaje += `   *Subtotal:* $${detalle.subtotal.toFixed(2)}\n\n`;
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Error desconocido al generar link de pago');
+        }
+
+        // ========== REDIRIGIR AL CLIENTE A WAYU PAY ==========
+        notificar('🔄 Abriendo Wayu Pay...');
+        
+        // Guardar el link en localStorage por si acaso
+        localStorage.setItem('ultimoLinkPago', data.link);
+        
+        // Redirigir en la misma pestaña o abrir en nueva
+        setTimeout(() => {
+            window.location.href = data.link;
+        }, 800);
+
+    } catch (error) {
+        console.error('❌ Error al generar link de pago:', error);
+        notificar(`❌ Error al generar el link de pago: ${error.message}`);
     }
-
-    mensaje += `--------------------------\n`;
-    mensaje += `💰 *TOTAL USD:* $${totalConDelivery.toFixed(2)}\n`;
-    mensaje += `💵 *TOTAL ${moneda}:* ${totalFinalLocal.toLocaleString(config.formatoLocal || 'es-VE', { minimumFractionDigits: config.decimales || 0 })}\n`;
-    mensaje += `📊 Tasa: ${(TASA_BCV || 0).toFixed(2)} ${moneda}/USD\n`;
-
-    if (deliveryAplicado) {
-        mensaje += `🚚 *Delivery:* +$${deliveryMonto.toFixed(2)}\n`;
-    }
-
-    if (!exento) {
-        mensaje += `⚖️ IVA (${(config.ivaDefault * 100)}%) incluido en el precio final.\n`;
-    }
-
-    mensaje += `\n⚠️ *Este pedido NO ha sido pagado aún.*`;
-    mensaje += `\n_El cliente debe realizar el pago con Wayu Pay._`;
-
-    const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-    window.open(urlWhatsApp, '_blank');
-
-    notificar('✅ Pedido enviado por WhatsApp (NO PAGADO)');
-}
-
-// ==================== ENVIAR PEDIDO CON ESTADO (PAGADO / NO PAGADO) ====================
-async function enviarPedidoWhatsAppConEstado(configNegocio, pedidoReferencia, estaPagado) {
-    const negocio = configNegocio || {};
-    const telefono = (negocio.whatsapp || '584120000000').replace(/\D/g, '');
-    const nombreNegocio = escapeHtml(negocio.name || 'Digitaliza Urpín');
-
-    let mensaje = '';
-    let textoNotificacion = '';
-
-    if (estaPagado) {
-        mensaje = `*✅ PEDIDO PAGADO - ${nombreNegocio}*\n`;
-        mensaje += `📋 *REF: ${pedidoReferencia}*\n`;
-        mensaje += `📅 ${new Date().toLocaleString('es-VE')}\n`;
-        mensaje += `💰 *ESTADO: PAGADO (Wayu Pay)*\n`;
-        mensaje += `--------------------------\n\n`;
-        mensaje += `_El cliente ha realizado el pago exitosamente._\n\n`;
-        mensaje += `_Por favor, preparar el pedido._`;
-        textoNotificacion = '✅ Pedido PAGADO enviado por WhatsApp';
-    } else {
-        mensaje = `*⚠️ PEDIDO NO PAGADO - ${nombreNegocio}*\n`;
-        mensaje += `📋 *REF: ${pedidoReferencia}*\n`;
-        mensaje += `📅 ${new Date().toLocaleString('es-VE')}\n`;
-        mensaje += `❌ *ESTADO: NO PAGADO*\n`;
-        mensaje += `--------------------------\n\n`;
-        mensaje += `_El cliente NO ha realizado el pago._\n\n`;
-        mensaje += `_Contactar al cliente para coordinar el pago._`;
-        textoNotificacion = '⚠️ Pedido NO PAGADO enviado por WhatsApp';
-    }
-
-    const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-    window.open(urlWhatsApp, '_blank');
-
-    if (estaPagado) {
-        localStorage.removeItem('ultimoPedidoPagado');
-    }
-
-    notificar(textoNotificacion);
-}
-
-// ==================== MOSTRAR BOTÓN DE PAGO ====================
-function mostrarBotonPago(link) {
-    const container = document.getElementById('cart-items');
-    if (!container) return;
-
-    const btnExistente = document.getElementById('pago-wayu-container');
-    if (btnExistente) btnExistente.remove();
-
-    const div = document.createElement('div');
-    div.id = 'pago-wayu-container';
-    div.className = 'mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-200';
-    div.innerHTML = `
-        <p class="text-sm font-bold text-blue-800 mb-3">💳 Paga ahora para confirmar tu pedido</p>
-        <a href="${link}" target="_blank"
-           class="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-bold uppercase text-sm hover:bg-blue-700 transition">
-           Pagar con Wayu Pay
-        </a>
-        <p class="text-[10px] text-slate-400 mt-2 text-center">Pago seguro vía Pago Móvil, Tarjeta o Cripto</p>
-        <p class="text-[8px] text-slate-400 mt-2 text-center">⚠️ Después de pagar, usa el botón "Enviar a WhatsApp" para notificar al negocio.</p>
-    `;
-    container.appendChild(div);
 }

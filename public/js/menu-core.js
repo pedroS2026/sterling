@@ -1,6 +1,6 @@
 /**
  * Digitaliza Urpín - Módulo Central del Menú
- * VERSIÓN CON DETECCIÓN DE PEDIDO PENDIENTE TRAS PAGO
+ * VERSIÓN CON BOTÓN ÚNICO: PAGAR Y ENVIAR PEDIDO
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -8,7 +8,7 @@ import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasej
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 import { calcularPrecios, getConfigPaisLocal } from './pricing.js';
 import { PAISES, obtenerTasa, formatearPrecio } from './currency.js';
-import { carrito, agregarAlCarrito, modificarCantidad, enviarPedidoWhatsApp, actualizarCarritoUI, pagarConWayuPay } from './cart.js';
+import { carrito, agregarAlCarrito, modificarCantidad, actualizarCarritoUI, pagarYEnviarPedido } from './cart.js';
 
 // ==================== CONFIGURACIÓN DE FIREBASE ====================
 const firebaseConfig = {
@@ -119,12 +119,9 @@ window.modificar = (id, delta) => {
     modificarCantidad(id, delta, actualizarCarritoUI, configNegocio.exentoIVA);
 };
 
-window.pagarConWayu = () => {
-    pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV);
-};
-
-window.enviarWhatsApp = () => {
-    enviarPedidoWhatsApp(configNegocio, CLIENTE_ID, TASA_BCV);
+// ========== BOTÓN ÚNICO: PAGAR Y ENVIAR PEDIDO ==========
+window.pagarYEnviarPedido = () => {
+    pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV);
 };
 
 // ==================== CARRUSEL ====================
@@ -524,23 +521,6 @@ function conectarFirestore() {
 
             actualizarTasa();
             renderInterface();
-
-            // ========== DETECTAR PEDIDO PENDIENTE DESPUÉS DEL PAGO ==========
-            const pedidoPendiente = localStorage.getItem('pedidoPendiente');
-            const clienteIdGuardado = localStorage.getItem('clienteIdPendiente');
-
-            if (pedidoPendiente && clienteIdGuardado === CLIENTE_ID) {
-                console.log('✅ Pedido pendiente detectado tras pago:', pedidoPendiente);
-
-                localStorage.setItem('ultimoPedidoPagado', pedidoPendiente);
-                localStorage.removeItem('pedidoPendiente');
-                localStorage.removeItem('clienteIdPendiente');
-
-                setTimeout(() => {
-                    actualizarCarritoUI(configNegocio.exentoIVA);
-                    notificar(`✅ Pago confirmado. Envía el pedido ${pedidoPendiente} por WhatsApp.`);
-                }, 500);
-            }
 
             if (carrito.length > 0) {
                 actualizarCarritoUI(configNegocio.exentoIVA);

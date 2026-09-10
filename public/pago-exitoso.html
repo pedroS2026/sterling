@@ -17,39 +17,132 @@
         </div>
         <h1 class="text-2xl font-black text-slate-800 mb-3">¡Pago Procesado!</h1>
         <p class="text-sm text-slate-500 mb-6">
-            Tu pago ha sido recibido exitosamente. Para completar el proceso, vuelve al menú del negocio y notifica tu pedido por WhatsApp.
+            Tu pago ha sido recibido exitosamente. En un momento se abrirá WhatsApp para enviar tu pedido al negocio.
         </p>
-        
-        <div class="bg-slate-50 rounded-2xl p-4 mb-6">
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Referencia del pedido (opcional)</p>
-            <input type="text" id="pedido-input" placeholder="Ej: REF-XXXX-XXXX" 
-                   class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-center outline-none focus:border-blue-500 transition-all">
-            <p class="text-[10px] text-slate-400 mt-2">Ingresa la referencia que recibiste en tu pedido, si la tienes.</p>
+
+        <div id="estado-envio" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+            <p class="text-xs font-bold text-blue-800">
+                <i class="fas fa-spinner animate-spin mr-2"></i>
+                Preparando tu pedido...
+            </p>
         </div>
 
+        <button onclick="enviarManualmente()" 
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-lg">
+            <i class="fab fa-whatsapp mr-2"></i> Enviar Pedido por WhatsApp
+        </button>
+
         <button onclick="volverAlMenu()" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-lg">
-            <i class="fas fa-arrow-left mr-2"></i> Volver al Menú y Enviar Pedido
+                class="w-full mt-3 bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-all">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Menú
         </button>
     </div>
 
     <script>
-        function volverAlMenu() {
-            const input = document.getElementById('pedido-input').value.trim();
-            const referencia = input || '';
+        // ==================== FUNCIÓN PRINCIPAL ====================
+        function construirMensajeYEnviar() {
+            const pedidoDataStr = localStorage.getItem('pedidoPendienteData');
             const clienteId = localStorage.getItem('ultimoClienteId');
             
-            let url = '/'; // Por defecto, va a la raíz
+            if (!pedidoDataStr) {
+                document.getElementById('estado-envio').innerHTML = `
+                    <p class="text-xs font-bold text-amber-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        No se encontró información del pedido. Vuelve al menú.
+                    </p>
+                `;
+                return false;
+            }
+
+            const pedido = JSON.parse(pedidoDataStr);
+            const telefono = pedido.telefono;
             
-            if (clienteId) {
-                url = `/menu.html?id=${clienteId}`;
-                if (referencia) {
-                    url += `&pedido=${encodeURIComponent(referencia)}`;
+            // Construir el mensaje de WhatsApp
+            let mensaje = `*✅ PEDIDO PAGADO - ${pedido.negocio}*\n`;
+            mensaje += `📋 *REF: ${pedido.referencia}*\n`;
+            mensaje += `📅 ${new Date().toLocaleString('es-VE')}\n`;
+            mensaje += `🌎 ${pedido.configEmoji} ${pedido.configNombre}\n`;
+            mensaje += `💰 *ESTADO: PAGADO (Wayu Pay)*\n`;
+            mensaje += `--------------------------\n\n`;
+            
+            for (const detalle of pedido.items) {
+                mensaje += `✅ *${detalle.cantidad}x* ${detalle.nombre}\n`;
+                if (detalle.extras && detalle.extras.length > 0) {
+                    const extrasConPrecio = detalle.extras.filter(e => e.precio > 0);
+                    const extrasSinPrecio = detalle.extras.filter(e => e.precio === 0);
+                    if (extrasConPrecio.length > 0) {
+                        mensaje += `   *Extras:*\n`;
+                        for (const extra of extrasConPrecio) {
+                            mensaje += `      + ${extra.nombre} (+$${extra.precio.toFixed(2)})\n`;
+                        }
+                    }
+                    if (extrasSinPrecio.length > 0) {
+                        const nombres = extrasSinPrecio.map(e => e.nombre).join(', ');
+                        mensaje += `   *Opciones:* ${nombres}\n`;
+                    }
                 }
+                mensaje += `   *Precio:* $${detalle.precioUnitario.toFixed(2)}\n`;
+                mensaje += `   *Subtotal:* $${detalle.subtotal.toFixed(2)}\n\n`;
             }
             
+            mensaje += `--------------------------\n`;
+            mensaje += `💰 *TOTAL USD:* $${pedido.totalUSD.toFixed(2)}\n`;
+            mensaje += `💵 *TOTAL ${pedido.moneda}:* ${pedido.totalLocal.toLocaleString(pedido.configFormatoLocal, { minimumFractionDigits: pedido.configDecimales })}\n`;
+            mensaje += `📊 Tasa: ${(window.TASA_BCV || 0).toFixed(2)} ${pedido.moneda}/USD\n`;
+            
+            if (pedido.deliveryAplicado) {
+                mensaje += `🚚 *Delivery:* +$${pedido.deliveryMonto.toFixed(2)}\n`;
+            }
+            
+            if (!pedido.exento) {
+                mensaje += `⚖️ IVA (${(pedido.ivaDefault * 100)}%) incluido en el precio final.\n`;
+            }
+            
+            mensaje += `\n_✅ Pago confirmado por Wayu Pay._`;
+            mensaje += `\n_Por favor, preparar el pedido._`;
+
+            const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+            
+            // Actualizar estado visual
+            document.getElementById('estado-envio').innerHTML = `
+                <p class="text-xs font-bold text-emerald-800">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    ¡Pedido enviado a WhatsApp!
+                </p>
+                <p class="text-[10px] text-slate-500 mt-1">Si no se abrió, haz clic en el botón de abajo.</p>
+            `;
+            
+            // Abrir WhatsApp
+            window.open(urlWhatsApp, '_blank');
+            
+            // Limpiar localStorage
+            localStorage.removeItem('pedidoPendiente');
+            localStorage.removeItem('pedidoPendienteData');
+            localStorage.removeItem('ultimoPedidoPagado');
+            
+            return true;
+        }
+
+        function enviarManualmente() {
+            construirMensajeYEnviar();
+        }
+
+        function volverAlMenu() {
+            const clienteId = localStorage.getItem('ultimoClienteId');
+            let url = '/';
+            if (clienteId) {
+                url = `/menu.html?id=${clienteId}`;
+            }
             window.location.href = url;
         }
+
+        // ==================== AUTO-EJECUTAR AL CARGAR ====================
+        window.addEventListener('load', () => {
+            // Esperar 1.5 segundos para asegurar que la página cargue bien
+            setTimeout(() => {
+                construirMensajeYEnviar();
+            }, 1500);
+        });
     </script>
 </body>
 </html>
