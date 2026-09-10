@@ -302,6 +302,7 @@ export function actualizarCarritoUI(exentoIVA = false) {
             }
         }
     }
+}
 
 // ==================== FUNCIÓN 1: PAGAR CON WAYU PAY ====================
 export async function pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV) {
@@ -667,6 +668,7 @@ function mostrarBotonPago(link) {
         <p class="text-[8px] text-slate-400 mt-2 text-center">⚠️ Después de pagar, usa el botón "Enviar a WhatsApp" para notificar al negocio.</p>
     `;
     container.appendChild(div);
+}
 
 // ==================== ENVIAR PEDIDO PAGADO POR WHATSAPP ====================
 async function enviarPedidoPagadoPorWhatsApp(configNegocio, pedidoReferencia) {

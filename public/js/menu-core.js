@@ -60,7 +60,9 @@ if (pedidoPagado) {
 }
 
 const APP_ID = "digitaliza-urpin-2026";
-let TASA_BCV = 49.50;b jb bbbbbb= productosData                                                                                           ;
+let TASA_BCV = 49.50;
+let productosData = [];
+window.productosDataGlobal = productosData;
 let categoriaActual = "Todas";
 let busquedaActual = "";
 let configNegocio = {};
