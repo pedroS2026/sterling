@@ -1,9 +1,6 @@
 /**
  * Digitaliza Urpín - Módulo Central del Menú
- * VERSIÓN DEFINITIVA CON TODAS LAS MEJORAS:
- * - Dos botones en el carrito (Wayu Pay + WhatsApp)
- * - Logs de depuración
- * - Verificaciones de nulidad en todos los elementos del DOM
+ * VERSIÓN CON DETECCIÓN DE PEDIDO PENDIENTE TRAS PAGO
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -47,16 +44,6 @@ if (idFromQuery) {
 
 if (!CLIENTE_ID) {
     window.location.href = "/";
-}
-
-// ========== DETECTAR PEDIDO PAGADO (después del pago) ==========
-const urlParamsPago = new URLSearchParams(window.location.search);
-const pedidoPagado = urlParamsPago.get('pedido');
-
-if (pedidoPagado) {
-    // Guardar en localStorage para el botón de WhatsApp
-    localStorage.setItem('ultimoPedidoPagado', pedidoPagado);
-    console.log('✅ Pedido pagado detectado:', pedidoPagado);
 }
 
 const APP_ID = "digitaliza-urpin-2026";
@@ -151,7 +138,7 @@ window.verDetalle = (id) => {
     const tema = temas[configNegocio.type] || temas.store;
     const view = document.getElementById('detail-view');
     if (!view) return;
-    
+
     const precios = calcularPrecios(p.price, TASA_BCV, configNegocio.exentoIVA, paisActual);
 
     const imagenes = p.images && p.images.length > 0 ? p.images : (p.img ? [p.img] : ['https://placehold.co/400x400/f8fafc/64748b?text=Sin+Imagen']);
@@ -193,7 +180,6 @@ window.verDetalle = (id) => {
                 <img id="detail-img" class="max-h-full max-w-full object-contain p-4" src="${carruselImagenes[0]}">
             `;
         }
-        // Botón de cerrar
         const closeBtn = document.createElement('button');
         closeBtn.className = 'absolute top-4 left-4 bg-black/30 hover:bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center transition-all';
         closeBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
@@ -201,7 +187,6 @@ window.verDetalle = (id) => {
         container.appendChild(closeBtn);
     }
 
-    // Extras
     const modifiersContainer = document.getElementById('product-modifiers');
     if (modifiersContainer) {
         let extrasHTML = '';
@@ -227,7 +212,6 @@ window.verDetalle = (id) => {
                 </div>
             `;
         }
-        // Delivery
         if (deliveryActivo) {
             if (extrasNormalizados.length > 0) {
                 extrasHTML += `<div class="mt-4 pt-4 border-t border-slate-200"></div>`;
@@ -254,7 +238,6 @@ window.verDetalle = (id) => {
         modifiersContainer.innerHTML = extrasHTML;
     }
 
-    // Botón añadir
     const addBtn = document.getElementById('detail-add-btn');
     if (addBtn) {
         addBtn.onclick = () => {
@@ -356,7 +339,6 @@ function renderInterface() {
         ivaNote.innerText = configNegocio.exentoIVA ? '' : `Total en ${config.moneda} incluye IVA (${(config.ivaDefault * 100)}%)`;
     }
 
-    // Campo de mesa
     const mesaContainer = document.getElementById('mesa-container');
     if (mesaContainer) {
         const tiposSinMesa = ['parts', 'store'];
@@ -380,7 +362,7 @@ function renderCategorias(tema) {
     if (!container) return;
     const cats = ["Todas", ...new Set(productosData.map(p => p.category))];
     container.innerHTML = cats.map(c => `
-        <button onclick="window.filtrar('${c}')" 
+        <button onclick="window.filtrar('${c}')"
             class="px-6 py-3 rounded-2xl text-[10px] font-light italic tracking-wider transition-all whitespace-nowrap
             ${categoriaActual === c ? `bg-${tema.primary} text-white shadow-lg scale-105` : 'bg-white text-slate-400 border border-slate-100'}">
             ${escapeHtml(c)}
@@ -542,6 +524,23 @@ function conectarFirestore() {
 
             actualizarTasa();
             renderInterface();
+
+            // ========== DETECTAR PEDIDO PENDIENTE DESPUÉS DEL PAGO ==========
+            const pedidoPendiente = localStorage.getItem('pedidoPendiente');
+            const clienteIdGuardado = localStorage.getItem('clienteIdPendiente');
+
+            if (pedidoPendiente && clienteIdGuardado === CLIENTE_ID) {
+                console.log('✅ Pedido pendiente detectado tras pago:', pedidoPendiente);
+
+                localStorage.setItem('ultimoPedidoPagado', pedidoPendiente);
+                localStorage.removeItem('pedidoPendiente');
+                localStorage.removeItem('clienteIdPendiente');
+
+                setTimeout(() => {
+                    actualizarCarritoUI(configNegocio.exentoIVA);
+                    notificar(`✅ Pago confirmado. Envía el pedido ${pedidoPendiente} por WhatsApp.`);
+                }, 500);
+            }
 
             if (carrito.length > 0) {
                 actualizarCarritoUI(configNegocio.exentoIVA);
