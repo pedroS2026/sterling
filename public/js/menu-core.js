@@ -49,10 +49,18 @@ if (!CLIENTE_ID) {
     window.location.href = "/";
 }
 
+// ========== DETECTAR PEDIDO PAGADO (después del pago) ==========
+const urlParamsPago = new URLSearchParams(window.location.search);
+const pedidoPagado = urlParamsPago.get('pedido');
+
+if (pedidoPagado) {
+    // Guardar en localStorage para el botón de WhatsApp
+    localStorage.setItem('ultimoPedidoPagado', pedidoPagado);
+    console.log('✅ Pedido pagado detectado:', pedidoPagado);
+}
+
 const APP_ID = "digitaliza-urpin-2026";
-let TASA_BCV = 49.50;
-let productosData = [];
-window.productosDataGlobal = productosData;
+let TASA_BCV = 49.50;b jb bbbbbb= productosData                                                                                           ;
 let categoriaActual = "Todas";
 let busquedaActual = "";
 let configNegocio = {};
@@ -524,9 +532,7 @@ function conectarFirestore() {
             };
 
             window.configNegocio = configNegocio;
-            // Detectar pago exitoso (después de que el negocio esté configurado)
-            detectarPagoExitoso();
-            
+
             if (loader) {
                 loader.style.opacity = '0';
                 setTimeout(() => loader.style.display = 'none', 500);
@@ -561,40 +567,5 @@ window.addEventListener('beforeunload', () => {
         clearTimeout(tasaTimer);
     }
 });
-// ==================== DETECCIÓN DE REDIRECCIÓN POST-PAGO ====================
-function detectarPagoExitoso() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    const pedidoId = urlParams.get('pedido');
-
-    if (paymentStatus === 'success' && pedidoId) {
-        console.log('✅ Pago exitoso detectado para pedido:', pedidoId);
-        
-        // Guardar el pedidoId en localStorage para que el carrito lo use
-        localStorage.setItem('ultimoPedidoPagado', pedidoId);
-        
-        // Mostrar mensaje de éxito
-        setTimeout(() => {
-            notificar('✅ ¡Pago exitoso! Ahora envía el pedido por WhatsApp para notificar al negocio.');
-        }, 500);
-        
-        // Abrir el carrito automáticamente después de 1 segundo
-        setTimeout(() => {
-            window.toggleCart();
-            // Recalcular el carrito para mostrar el botón de WhatsApp
-            actualizarCarritoUI(configNegocio.exentoIVA);
-        }, 1500);
-        
-        // Limpiar la URL para que no se vuelva a detectar al recargar
-        // Opcional: reemplazar el historial sin recargar la página
-        if (window.history && window.history.replaceState) {
-            const cleanUrl = window.location.pathname + '?id=' + CLIENTE_ID;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
-    }
-}
-
-// Llamar a esta función después de que el negocio esté configurado
-// Agregar esta línea al final de la función conectarFirestore(), después de configNegocio
 
 conectarFirestore();
