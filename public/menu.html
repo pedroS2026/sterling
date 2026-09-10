@@ -35,7 +35,7 @@
     <!-- Firebase App Check -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js"></script>
 
-    <script type="module" src="./js/menu-core.js?v=20260903"></script>
+    <script type="module" src="./js/menu-core.js?v=20260909"></script>
 </head>
 
 <div id="dynamic-bg" class="fixed inset-0 -z-10 bg-cover bg-center opacity-20 blur-sm scale-110 transition-all duration-700"></div>
@@ -47,7 +47,7 @@
         <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
     </div>
 
-    <!-- Header sin tasa BCV -->
+    <!-- Header -->
     <header id="main-header" class="bg-gradient-to-b from-black/80 to-transparent p-6 text-center shadow-lg">
         <div class="flex justify-between items-start">
             <div>
@@ -97,7 +97,6 @@
     </div>
 
     <!-- Carrito -->
-        <!-- Carrito -->
     <div id="cart-view" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm translate-y-full transition-transform duration-500 flex items-end">
         <div class="w-full bg-white rounded-t-[3.5rem] p-10 shadow-2xl relative max-w-md mx-auto">
             <div class="w-12 h-1 bg-slate-100 rounded-full absolute top-4 left-1/2 -translate-x-1/2"></div>
@@ -114,23 +113,20 @@
                 <p class="text-lg font-black text-emerald-600 italic"><span id="total-bs">0,00</span> Bs.</p>
             </div>
 
-            <!-- ========== CAMPO DE MESA (SOLO PARA NEGOCIOS DE COMIDA) ========== -->
+            <!-- CAMPO DE MESA (SOLO PARA NEGOCIOS DE COMIDA) -->
             <div id="mesa-container" class="mb-4 hidden">
                 <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Número de Mesa</label>
                 <input type="number" id="input-mesa" placeholder="Ej: 5" min="1" max="99" 
                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all">
             </div>
-            <!-- =========================================================== -->
 
-            <!-- ========== DOS BOTONES ========== -->
-            <!-- Botón 1: PAGAR CON WAYU PAY (solo pago) -->
+            <!-- DOS BOTONES -->
             <button id="btn-pagar-wayu" onclick="pagarConWayu()" 
                     class="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all mb-3">
                 <i class="fas fa-credit-card text-2xl"></i>
                 <span>1. PAGAR CON WAYU PAY</span>
             </button>
 
-            <!-- Botón 2: Enviar pedido a WhatsApp (manual, después de pagar) -->
             <button id="btn-enviar-whatsapp" onclick="enviarWhatsApp()" 
                     class="w-full bg-green-500 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                 <i class="fab fa-whatsapp text-2xl"></i>
