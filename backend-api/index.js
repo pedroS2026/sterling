@@ -59,8 +59,7 @@ app.post('/api/crear-link-pago', async (req, res) => {
       },
       product_name: productoNombre || `Pedido #${pedidoId}`,
       product_description: productoDescripcion || 'Pago en Digitaliza Urpín',
-      // ========== URL DE REDIRECCIÓN DINÁMICA ==========
-      return_url: `https://digitaliza-urpin.web.app/menu.html?id=${clienteId}&payment=success&pedido=${pedidoId}`,
+      
     });
 
     // Guardar transactionId en Firestore

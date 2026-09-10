@@ -440,6 +440,7 @@ export async function pagarConWayuPay(configNegocio, CLIENTE_ID, TASA_BCV) {
             body: JSON.stringify({
                 monto: parseFloat(totalConDelivery),
                 pedidoId: referencia,
+                clienteId: CLIENTE_ID, 
                 productoNombre: productoNombre,
                 productoDescripcion: productoDescripcion,
             })
