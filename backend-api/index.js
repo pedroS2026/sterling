@@ -5,10 +5,9 @@ const admin = require('firebase-admin');
 const WayuPay = require('wayu-js-sdk');
 require('dotenv').config();
 
-// ========== INICIALIZAR FIREBASE (UNA SOLA VEZ) ==========
+// ========== INICIALIZAR FIREBASE ==========
 let serviceAccount;
 
-// Prioridad 1: Variable de entorno (Vercel)
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
   serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
   admin.initializeApp({
@@ -16,7 +15,6 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
   });
   console.log('✅ Firebase inicializado con variable de entorno (Vercel)');
 } else {
-  // Prioridad 2: Archivo local (desarrollo)
   try {
     serviceAccount = require('./serviceAccountKey.json');
     admin.initializeApp({
@@ -24,7 +22,6 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     });
     console.log('✅ Firebase inicializado con archivo local');
   } catch (error) {
-    // Prioridad 3: Fallback a applicationDefault (útil para otros entornos)
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
     });
@@ -49,7 +46,11 @@ app.use(express.json());
 // ========== RUTA PARA GENERAR LINK DE PAGO ==========
 app.post('/api/crear-link-pago', async (req, res) => {
   try {
-    const { monto, pedidoId, productoNombre, productoDescripcion } = req.body;
+    const { monto, pedidoId, clienteId, productoNombre, productoDescripcion } = req.body;
+
+    if (!clienteId) {
+      return res.status(400).json({ success: false, error: 'clienteId es requerido' });
+    }
 
     const result = await wayu.checkout.generatePaymentUrl({
       amount: {
@@ -58,6 +59,8 @@ app.post('/api/crear-link-pago', async (req, res) => {
       },
       product_name: productoNombre || `Pedido #${pedidoId}`,
       product_description: productoDescripcion || 'Pago en Digitaliza Urpín',
+      // ========== URL DE REDIRECCIÓN DINÁMICA ==========
+      return_url: `https://digitaliza-urpin.web.app/menu.html?id=${clienteId}&payment=success&pedido=${pedidoId}`,
     });
 
     // Guardar transactionId en Firestore
@@ -72,6 +75,7 @@ app.post('/api/crear-link-pago', async (req, res) => {
     await pedidoRef.set({
       transactionId: result.transactionId,
       paymentStatus: 'pending',
+      clienteId: clienteId,
     }, { merge: true });
 
     res.json({
@@ -88,7 +92,6 @@ app.post('/api/crear-link-pago', async (req, res) => {
 
 // ========== RUTA WEBHOOK PARA CONFIRMAR PAGOS ==========
 app.post('/api/webhook-wayu', async (req, res) => {
-  // Validar firma del webhook
   const isValid = wayu.validateWebhook(
     req.headers,
     req.body,
@@ -136,7 +139,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// ========== INICIAR SERVIDOR (para desarrollo local) ==========
+// ========== INICIAR SERVIDOR ==========
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
