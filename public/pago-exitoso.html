@@ -38,11 +38,34 @@
         </button>
     </div>
 
-    <script>
-        // ==================== FUNCIÓN PRINCIPAL ====================
-        function construirMensajeYEnviar() {
+    <script type="module">
+        // ==================== IMPORTS FIREBASE ====================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAstAXcgNXevSuTbgZYQ_U9_SwhUI4tzTY",
+            authDomain: "digitaliza-urpin.firebaseapp.com",
+            projectId: "digitaliza-urpin",
+            storageBucket: "digitaliza-urpin.firebasestorage.app",
+            messagingSenderId: "634374370608",
+            appId: "1:634374370608:web:91861bb040c110d560c4f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6LcDST0tAAAAAIsL4Py1fORj7RKUEx-u-16fU0zD'),
+            isTokenAutoRefreshEnabled: true
+        });
+
+        const APP_ID = "digitaliza-urpin-2026";
+
+        // ==================== FUNCIONES ====================
+        async function construirMensajeYEnviar() {
             const pedidoDataStr = localStorage.getItem('pedidoPendienteData');
-            const clienteId = localStorage.getItem('ultimoClienteId');
             
             if (!pedidoDataStr) {
                 document.getElementById('estado-envio').innerHTML = `
@@ -54,56 +77,66 @@
                 return false;
             }
 
-            const pedido = JSON.parse(pedidoDataStr);
-            const telefono = pedido.telefono;
-            
-            // Construir el mensaje de WhatsApp
+            const pedidoLocal = JSON.parse(pedidoDataStr);
+            const pedidoRef = doc(db, "artifacts", APP_ID, "public", "data", "pedidos", pedidoLocal.referencia);
+            const pedidoSnap = await getDoc(pedidoRef);
+
+            if (!pedidoSnap.exists()) {
+                document.getElementById('estado-envio').innerHTML = `
+                    <p class="text-xs font-bold text-red-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        No se encontró el pedido en el sistema.
+                    </p>
+                `;
+                return false;
+            }
+
+            const pedido = pedidoSnap.data();
+            const telefono = (pedido.negocioData?.whatsapp || '584120000000').replace(/\D/g, '');
+
+            // Construir mensaje WhatsApp
             let mensaje = `*✅ PEDIDO PAGADO - ${pedido.negocio}*\n`;
             mensaje += `📋 *REF: ${pedido.referencia}*\n`;
-            mensaje += `📅 ${new Date().toLocaleString('es-VE')}\n`;
-            mensaje += `🌎 ${pedido.configEmoji} ${pedido.configNombre}\n`;
+            mensaje += `📅 ${new Date(pedido.fecha).toLocaleString('es-VE')}\n`;
             mensaje += `💰 *ESTADO: PAGADO (Wayu Pay)*\n`;
+            if (pedido.mesa) {
+                mensaje += `🍽️ *MESA:* ${pedido.mesa}\n`;
+            }
             mensaje += `--------------------------\n\n`;
-            
+
             for (const detalle of pedido.items) {
                 mensaje += `✅ *${detalle.cantidad}x* ${detalle.nombre}\n`;
                 if (detalle.extras && detalle.extras.length > 0) {
                     const extrasConPrecio = detalle.extras.filter(e => e.precio > 0);
-                    const extrasSinPrecio = detalle.extras.filter(e => e.precio === 0);
                     if (extrasConPrecio.length > 0) {
                         mensaje += `   *Extras:*\n`;
                         for (const extra of extrasConPrecio) {
                             mensaje += `      + ${extra.nombre} (+$${extra.precio.toFixed(2)})\n`;
                         }
                     }
-                    if (extrasSinPrecio.length > 0) {
-                        const nombres = extrasSinPrecio.map(e => e.nombre).join(', ');
-                        mensaje += `   *Opciones:* ${nombres}\n`;
-                    }
                 }
                 mensaje += `   *Precio:* $${detalle.precioUnitario.toFixed(2)}\n`;
                 mensaje += `   *Subtotal:* $${detalle.subtotal.toFixed(2)}\n\n`;
             }
-            
+
             mensaje += `--------------------------\n`;
             mensaje += `💰 *TOTAL USD:* $${pedido.totalUSD.toFixed(2)}\n`;
-            mensaje += `💵 *TOTAL ${pedido.moneda}:* ${pedido.totalLocal.toLocaleString(pedido.configFormatoLocal, { minimumFractionDigits: pedido.configDecimales })}\n`;
-            mensaje += `📊 Tasa: ${(window.TASA_BCV || 0).toFixed(2)} ${pedido.moneda}/USD\n`;
-            
+            mensaje += `💵 *TOTAL ${pedido.moneda}:* ${pedido.totalLocal.toLocaleString('es-VE')}\n`;
+            mensaje += `📊 Tasa: ${(pedido.tasaBCV || 0).toFixed(2)} ${pedido.moneda}/USD\n`;
+
             if (pedido.deliveryAplicado) {
                 mensaje += `🚚 *Delivery:* +$${pedido.deliveryMonto.toFixed(2)}\n`;
             }
-            
-            if (!pedido.exento) {
-                mensaje += `⚖️ IVA (${(pedido.ivaDefault * 100)}%) incluido en el precio final.\n`;
+
+            if (!pedido.exentoIVA) {
+                mensaje += `⚖️ IVA incluido en el precio final.\n`;
             }
-            
+
             mensaje += `\n_✅ Pago confirmado por Wayu Pay._`;
             mensaje += `\n_Por favor, preparar el pedido._`;
 
             const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-            
-            // Actualizar estado visual
+
             document.getElementById('estado-envio').innerHTML = `
                 <p class="text-xs font-bold text-emerald-800">
                     <i class="fas fa-check-circle mr-2"></i>
@@ -111,34 +144,32 @@
                 </p>
                 <p class="text-[10px] text-slate-500 mt-1">Si no se abrió, haz clic en el botón de abajo.</p>
             `;
-            
-            // Abrir WhatsApp
+
             window.open(urlWhatsApp, '_blank');
-            
+
             // Limpiar localStorage
             localStorage.removeItem('pedidoPendiente');
             localStorage.removeItem('pedidoPendienteData');
             localStorage.removeItem('ultimoPedidoPagado');
-            
+
             return true;
         }
 
-        function enviarManualmente() {
+        window.enviarManualmente = function() {
             construirMensajeYEnviar();
-        }
+        };
 
-        function volverAlMenu() {
+        window.volverAlMenu = function() {
             const clienteId = localStorage.getItem('ultimoClienteId');
             let url = '/';
             if (clienteId) {
                 url = `/menu.html?id=${clienteId}`;
             }
             window.location.href = url;
-        }
+        };
 
-        // ==================== AUTO-EJECUTAR AL CARGAR ====================
+        // Auto-ejecutar al cargar
         window.addEventListener('load', () => {
-            // Esperar 1.5 segundos para asegurar que la página cargue bien
             setTimeout(() => {
                 construirMensajeYEnviar();
             }, 1500);

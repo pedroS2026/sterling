@@ -1,6 +1,6 @@
 /**
  * Digitaliza Urpín - Módulo del Carrito
- * VERSIÓN DE UN SOLO BOTÓN: PAGAR Y ENVIAR PEDIDO
+ * VERSIÓN SEGURA: Solo envía items al backend, el backend calcula el total
  */
 
 import { calcularPrecios, APP_SETTINGS, getConfigPaisLocal } from './pricing.js';
@@ -286,162 +286,43 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
     }
 
     const negocio = configNegocio || {};
-    const exento = negocio.exentoIVA === true || negocio.exentoIVA === "true";
     const nombreNegocio = escapeHtml(negocio.name || 'Digitaliza Urpín');
     const pais = negocio.pais || 'venezuela';
-    const config = getConfigPaisLocal(pais);
-    const moneda = config.moneda || 'Bs.';
-    const telefono = (negocio.whatsapp || '584120000000').replace(/\D/g, '');
 
+    // ========== GENERAR REFERENCIA ÚNICA ==========
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).slice(2, 6).toUpperCase();
     const referencia = `REF-${timestamp.slice(-4)}-${random}`;
 
-    let totalCalculadoUSD = 0;
-    let itemsDetalle = [];
-    let pedidoData = {
-        referencia: referencia,
-        clienteId: CLIENTE_ID,
-        negocio: nombreNegocio,
-        pais: pais,
-        fecha: new Date().toISOString(),
-        items: [],
-        totalUSD: 0,
-        totalLocal: 0,
-        exentoIVA: exento,
-        tasaBCV: TASA_BCV || 0,
-        estado: 'pendiente',
-        moneda: moneda,
-        pagoConfirmado: false,
-        negocioData: {
-            name: negocio.name,
-            whatsapp: negocio.whatsapp,
-            accent: negocio.accent,
-            type: negocio.type,
-            exentoIVA: exento
-        }
-    };
+    // ========== OBTENER MESA SI APLICA ==========
+    const inputMesa = document.getElementById('input-mesa');
+    const mesa = inputMesa && inputMesa.offsetParent !== null ? (parseInt(inputMesa.value) || null) : null;
 
-    const deliveryActivo = carrito.some(item => item.tieneDelivery === true);
-    const deliveryMonto = configNegocio.deliveryRecargo?.porcentaje || 3;
+    // ========== PREPARAR ITEMS PARA ENVIAR AL BACKEND (SOLO IDs Y CANTIDADES) ==========
+    const itemsParaEnviar = carrito.map(item => ({
+        idOriginal: item.idOriginal,
+        cantidad: item.qty || 0,
+        extras: (item.selectedExtras || []).map(e => ({
+            nombre: e.nombre || e.Nombre || 'Extra',
+            esDeliveryFlag: e.esDeliveryFlag || false
+        }))
+    }));
 
-    for (const item of carrito) {
-        const productoOriginal = obtenerProductoOriginal(item.idOriginal);
-        if (!productoOriginal) {
-            console.warn("Producto original no encontrado:", item.idOriginal);
-            continue;
-        }
+    console.log('📤 Enviando items al backend:', itemsParaEnviar);
 
-        const precioBaseOriginal = parseFloat(productoOriginal.price || 0);
-        if (isNaN(precioBaseOriginal) || precioBaseOriginal < 0) continue;
-
-        const selectedExtras = item.selectedExtras || [];
-        let costoExtras = 0;
-        const extrasDetalle = [];
-        let deliveryInfo = null;
-
-        for (const extra of selectedExtras) {
-            const precioExtra = typeof extra.precio === 'number' ? extra.precio : 0;
-            if (extra.esDeliveryFlag === true) continue;
-            if (extra.esDelivery === true) {
-                deliveryInfo = { nombre: extra.nombre || 'Delivery', precio: 0 };
-            } else if (precioExtra > 0) {
-                costoExtras += precioExtra;
-                extrasDetalle.push({ nombre: extra.nombre || 'Extra', precio: precioExtra });
-            } else {
-                extrasDetalle.push({ nombre: extra.nombre || 'Extra', precio: 0 });
-            }
-        }
-
-        const precioUnitarioReal = precioBaseOriginal + costoExtras;
-        const cantidad = item.qty || 0;
-        const subtotalReal = precioUnitarioReal * cantidad;
-        totalCalculadoUSD += subtotalReal;
-
-        const nombreProducto = productoOriginal.name || 'Producto';
-
-        itemsDetalle.push({
-            nombre: nombreProducto,
-            cantidad: cantidad,
-            precioUnitario: precioUnitarioReal,
-            subtotal: subtotalReal,
-            extras: extrasDetalle,
-            delivery: deliveryInfo
-        });
-
-        pedidoData.items.push({
-            id: productoOriginal.id,
-            nombre: productoOriginal.name,
-            cantidad: cantidad,
-            precioBase: precioBaseOriginal,
-            extras: extrasDetalle,
-            delivery: deliveryInfo,
-            precioUnitario: precioUnitarioReal,
-            subtotal: subtotalReal
-        });
-    }
-
-    if (itemsDetalle.length === 0) {
-        notificar('❌ Error: productos no válidos en el carrito');
-        return;
-    }
-
-    let totalConDelivery = totalCalculadoUSD;
-    let deliveryAplicado = false;
-    if (deliveryActivo && totalCalculadoUSD > 0) {
-        totalConDelivery = totalCalculadoUSD + deliveryMonto;
-        deliveryAplicado = true;
-    }
-
-    let totalConIVA = totalConDelivery;
-    if (!exento) {
-        totalConIVA = totalConDelivery * (1 + config.ivaDefault);
-    }
-    const tasaBCV = TASA_BCV || 0;
-    const totalFinalLocal = Math.ceil(totalConIVA * tasaBCV);
-
-    pedidoData.totalUSD = totalConDelivery;
-    pedidoData.totalLocal = totalFinalLocal;
-
-    // Guardar pedido en Firestore
-    try {
-        const docRef = doc(db, "artifacts", APP_ID, "public", "data", "pedidos", referencia);
-        await setDoc(docRef, pedidoData);
-        console.log("✅ Pedido guardado en Firestore:", referencia);
-    } catch (error) {
-        console.error("❌ Error al guardar pedido:", error);
-        notificar('❌ Error al guardar el pedido. Intenta de nuevo.');
-        return;
-    }
-
-    // ========== GUARDAR DATOS PARA DESPUÉS DEL PAGO ==========
-    // Guardamos el ID del cliente y la referencia para que pago-exitoso.html los use
+    // ========== GUARDAR DATOS EN LOCALSTORAGE PARA DESPUÉS DEL PAGO ==========
     localStorage.setItem('ultimoClienteId', CLIENTE_ID);
     localStorage.setItem('pedidoPendiente', referencia);
     localStorage.setItem('pedidoPendienteData', JSON.stringify({
         referencia,
         clienteId: CLIENTE_ID,
         negocio: nombreNegocio,
-        telefono,
-        moneda,
-        totalUSD: totalConDelivery,
-        totalLocal: totalFinalLocal,
-        items: itemsDetalle,
-        deliveryAplicado,
-        deliveryMonto,
-        exento,
-        ivaDefault: config.ivaDefault,
+        telefono: (negocio.whatsapp || '584120000000').replace(/\D/g, ''),
         pais,
-        configEmoji: config.emoji || '🌎',
-        configNombre: config.nombre || pais,
-        configFormatoLocal: config.formatoLocal || 'es-VE',
-        configDecimales: config.decimales || 0
+        mesa
     }));
 
-    // Generar link de pago
-    const productoNombre = `Pedido ${referencia}`;
-    const productoDescripcion = `Pedido para ${nombreNegocio}`;
-
+    // ========== ENVIAR AL BACKEND (SOLO ITEMS, NO MONTOS) ==========
     notificar('🔄 Generando link de pago...');
 
     try {
@@ -449,11 +330,11 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                monto: parseFloat(totalConDelivery),
-                pedidoId: referencia,
+                items: itemsParaEnviar,
                 clienteId: CLIENTE_ID,
-                productoNombre: productoNombre,
-                productoDescripcion: productoDescripcion
+                pedidoId: referencia,
+                mesa: mesa,
+                tasaBCV: TASA_BCV || 0
             })
         });
 
@@ -467,13 +348,17 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
             throw new Error(data.error || 'Error desconocido al generar link de pago');
         }
 
-        // ========== REDIRIGIR AL CLIENTE A WAYU PAY ==========
+        console.log('✅ Link de pago generado. Total validado: $' + data.totalValidado);
+
+        // ========== GUARDAR EL TOTAL VALIDADO EN LOCALSTORAGE ==========
+        const pedidoData = JSON.parse(localStorage.getItem('pedidoPendienteData'));
+        pedidoData.totalValidado = data.totalValidado;
+        pedidoData.totalLocal = data.totalLocal;
+        localStorage.setItem('pedidoPendienteData', JSON.stringify(pedidoData));
+
+        // ========== REDIRIGIR A WAYU PAY ==========
         notificar('🔄 Abriendo Wayu Pay...');
-        
-        // Guardar el link en localStorage por si acaso
-        localStorage.setItem('ultimoLinkPago', data.link);
-        
-        // Redirigir en la misma pestaña o abrir en nueva
+
         setTimeout(() => {
             window.location.href = data.link;
         }, 800);
