@@ -15,27 +15,30 @@
         <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-6">
             <i class="fas fa-check-circle"></i>
         </div>
-        <h1 class="text-2xl font-black text-slate-800 mb-3">¡Pago Procesado!</h1>
+        <h1 class="text-2xl font-black text-slate-800 mb-3">¡Pago Exitoso!</h1>
         <p class="text-sm text-slate-500 mb-6">
-            Tu pago ha sido recibido exitosamente. En un momento se abrirá WhatsApp para enviar tu pedido al negocio.
+            Tu pago ha sido procesado correctamente. Toca el botón de abajo para enviar tu pedido al negocio por WhatsApp.
         </p>
 
-        <div id="estado-envio" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
-            <p class="text-xs font-bold text-blue-800">
-                <i class="fas fa-spinner animate-spin mr-2"></i>
-                Preparando tu pedido...
-            </p>
-        </div>
-
-        <button onclick="enviarManualmente()" 
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-lg">
-            <i class="fab fa-whatsapp mr-2"></i> Enviar Pedido por WhatsApp
-        </button>
+        <!-- ========== BOTÓN DE ENVÍO A WHATSAPP ========== -->
+        <a id="btn-whatsapp" href="#" target="_blank"
+           class="w-full inline-flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl transition-all active:scale-95 mb-3">
+            <i class="fab fa-whatsapp text-2xl"></i>
+            <span>Enviar Pedido por WhatsApp</span>
+        </a>
+        <!-- ============================================ -->
 
         <button onclick="volverAlMenu()" 
-                class="w-full mt-3 bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-all">
+                class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-all">
             <i class="fas fa-arrow-left mr-2"></i> Volver al Menú
         </button>
+
+        <div id="estado-envio" class="mt-4 hidden">
+            <p class="text-[10px] text-slate-400">
+                Si el botón no funciona, copia este enlace y ábrelo manualmente:
+            </p>
+            <p id="link-text" class="text-[8px] text-slate-500 break-all mt-1"></p>
+        </div>
     </div>
 
     <script type="module">
@@ -63,8 +66,8 @@
 
         const APP_ID = "digitaliza-urpin-2026";
 
-        // ==================== FUNCIONES ====================
-        async function construirMensajeYEnviar() {
+        // ==================== FUNCIÓN PRINCIPAL ====================
+        async function prepararBotonWhatsApp() {
             const pedidoDataStr = localStorage.getItem('pedidoPendienteData');
             
             if (!pedidoDataStr) {
@@ -74,7 +77,8 @@
                         No se encontró información del pedido. Vuelve al menú.
                     </p>
                 `;
-                return false;
+                document.getElementById('estado-envio').classList.remove('hidden');
+                return;
             }
 
             const pedidoLocal = JSON.parse(pedidoDataStr);
@@ -88,7 +92,8 @@
                         No se encontró el pedido en el sistema.
                     </p>
                 `;
-                return false;
+                document.getElementById('estado-envio').classList.remove('hidden');
+                return;
             }
 
             const pedido = pedidoSnap.data();
@@ -135,29 +140,24 @@
             mensaje += `\n_✅ Pago confirmado por Wayu Pay._`;
             mensaje += `\n_Por favor, preparar el pedido._`;
 
+            // Construir la URL de WhatsApp
             const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 
-            document.getElementById('estado-envio').innerHTML = `
-                <p class="text-xs font-bold text-emerald-800">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    ¡Pedido enviado a WhatsApp!
-                </p>
-                <p class="text-[10px] text-slate-500 mt-1">Si no se abrió, haz clic en el botón de abajo.</p>
-            `;
+            // Asignar la URL al botón
+            const btnWhatsApp = document.getElementById('btn-whatsapp');
+            btnWhatsApp.href = urlWhatsApp;
 
-            window.open(urlWhatsApp, '_blank');
+            // Mostrar el enlace en caso de que el botón no funcione
+            document.getElementById('link-text').innerText = urlWhatsApp;
+            document.getElementById('estado-envio').classList.remove('hidden');
 
-            // Limpiar localStorage
-            localStorage.removeItem('pedidoPendiente');
-            localStorage.removeItem('pedidoPendienteData');
-            localStorage.removeItem('ultimoPedidoPagado');
-
-            return true;
+            // Al hacer clic, limpiar el localStorage
+            btnWhatsApp.addEventListener('click', () => {
+                localStorage.removeItem('pedidoPendiente');
+                localStorage.removeItem('pedidoPendienteData');
+                localStorage.removeItem('ultimoPedidoPagado');
+            });
         }
-
-        window.enviarManualmente = function() {
-            construirMensajeYEnviar();
-        };
 
         window.volverAlMenu = function() {
             const clienteId = localStorage.getItem('ultimoClienteId');
@@ -168,11 +168,9 @@
             window.location.href = url;
         };
 
-        // Auto-ejecutar al cargar
+        // ==================== AUTO-EJECUTAR AL CARGAR ====================
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                construirMensajeYEnviar();
-            }, 1500);
+            prepararBotonWhatsApp();
         });
     </script>
 </body>
