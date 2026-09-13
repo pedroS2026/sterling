@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digitaliza Urpín | El Catálogo Digital que Cobra por Ti</title>
-    <meta name="description" content="Plataforma para negocios en Venezuela. Menú digital con QR, pedidos por WhatsApp y pago integrado con Pago Móvil C2P. 15 días gratis.">
+    <meta name="description" content="Primera plataforma de catálogo digital para PYMES en Venezuela con Pago Móvil C2P automático. 0% comisiones. 15 días gratis.">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -73,8 +73,18 @@
             <h1 class="text-5xl md:text-7xl font-extrabold mt-6 mb-6 leading-tight tracking-tighter text-slate-950">
                 El catálogo digital que <span class="gradient-text">cobra por ti</span>
             </h1>
+            
+            <!-- ========== FRASE DE POSICIONAMIENTO ========== -->
+            <div class="bg-gradient-to-r from-blue-50 via-emerald-50 to-blue-50 border-2 border-blue-200 rounded-3xl p-6 mb-8 max-w-3xl mx-auto">
+                <p class="text-base md:text-lg text-slate-800 font-semibold leading-relaxed">
+                    <i class="fas fa-crown text-amber-500 mr-2"></i>
+                    <strong class="text-blue-700">Digitaliza Urpín</strong> es la <strong>primera plataforma de catálogo digital diseñada para PYMES en Venezuela</strong> que integra <strong class="text-emerald-700">Pago Móvil C2P automático</strong> directo a tu WhatsApp con <strong class="text-emerald-700">0% comisiones</strong>.
+                </p>
+            </div>
+            <!-- ============================================ -->
+
             <p class="text-lg md:text-xl text-slate-700 mb-10 max-w-2xl mx-auto font-medium">
-                Tus clientes piden, pagan con Pago Móvil C2P y el pedido llega a tu WhatsApp <strong>ya pagado</strong>. Sin comisiones, sin capturas falsas, sin perseguir clientes.
+                Tus clientes piden, pagan con Pago Móvil C2P y el pedido llega a tu WhatsApp <strong>ya pagado</strong>. Sin capturas falsas, sin perseguir clientes.
             </p>
             <div class="flex flex-col md:flex-row gap-4 justify-center items-center mb-6">
                 <a href="https://wa.me/584266662491?text=Hola,%20quiero%20probar%20los%2015%20días%20gratis%20de%20Digitaliza%20Urpín" class="bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-800 transition-all w-full md:w-auto text-center">
@@ -151,7 +161,7 @@
                     <div class="w-14 h-14 bg-orange-100 text-orange-700 rounded-2xl flex items-center justify-center text-2xl mb-5">
                         <i class="fas fa-qrcode"></i>
                     </div>
-                    <h3 class="font-extrabold text-lg mb-3 text-slate-900">Menú Digital con QR</h3>
+                    <h3 class="font-extrabold text-lg mb-3 text-slate-900">Catálogo Digital con QR</h3>
                     <p class="text-slate-600 text-sm">Carta digital con fotos, categorías, extras y precios actualizados en tiempo real.</p>
                 </div>
                 <!-- Característica 4 -->
@@ -182,7 +192,7 @@
         </div>
     </section>
 
-    <!-- ========== EJEMPLOS (SE MANTIENEN) ========== -->
+    <!-- ========== EJEMPLOS ========== -->
     <section id="ejemplos" class="py-20 px-6 bg-white">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-16">
@@ -233,18 +243,39 @@
     <!-- ========== PLANES Y PRECIOS ========== -->
     <section id="planes" class="py-20 px-6">
         <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
+            <div class="text-center mb-12">
                 <h2 class="text-4xl md:text-5xl font-extrabold tracking-tighter mb-4 text-slate-950">Planes simples, sin sorpresas</h2>
                 <p class="text-slate-600 text-lg max-w-2xl mx-auto">Elige el plan que mejor se adapte a tu negocio. Todos incluyen pago integrado.</p>
             </div>
+
+            <!-- ========== TOGGLE MENSUAL / ANUAL ========== -->
+            <div class="flex justify-center mb-12">
+                <div class="bg-slate-100 rounded-2xl p-1.5 inline-flex shadow-sm">
+                    <button id="btn-mensual" onclick="cambiarTipoPlan('mensual')" class="px-6 py-3 rounded-xl font-bold text-sm bg-white shadow-md text-slate-900 transition-all">
+                        Mensual
+                    </button>
+                    <button id="btn-anual" onclick="cambiarTipoPlan('anual')" class="px-6 py-3 rounded-xl font-bold text-sm text-slate-600 transition-all relative">
+                        Anual
+                        <span class="absolute -top-3 -right-3 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                            2 MESES GRATIS
+                        </span>
+                    </button>
+                </div>
+            </div>
+            <!-- ============================================ -->
+
             <div class="grid md:grid-cols-3 gap-8">
+
                 <!-- Plan Básico -->
                 <div class="bg-white rounded-[2.5rem] p-8 border-2 border-slate-100 card-shadow">
                     <h3 class="font-extrabold text-2xl mb-2 text-slate-900">📋 Básico</h3>
-                    <div class="mb-6">
-                        <span class="text-4xl font-black text-slate-900">$9.99</span>
-                        <span class="text-slate-500">/mes</span>
+                    <div class="mb-2">
+                        <span class="text-4xl font-black text-slate-900" data-precio-mensual="$9.99" data-precio-anual="$99.90">$9.99</span>
+                        <span class="text-slate-500 plan-periodo">/mes</span>
                     </div>
+                    <p class="text-xs text-emerald-600 font-bold mb-6 hidden" data-ahorro-basico>
+                        Ahorras $19.98 al año
+                    </p>
                     <ul class="space-y-3 mb-8 text-sm text-slate-600">
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Hasta 10 productos</li>
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Catálogo digital con QR</li>
@@ -254,14 +285,18 @@
                     </ul>
                     <a href="https://wa.me/584266662491?text=Quiero%20el%20plan%20Básico%20de%20Digitaliza%20Urpín" class="block text-center bg-slate-900 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold transition-all">Empezar</a>
                 </div>
+
                 <!-- Plan Pro -->
                 <div class="bg-white rounded-[2.5rem] p-8 border-4 border-blue-600 card-shadow relative">
                     <span class="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider">Más Popular</span>
                     <h3 class="font-extrabold text-2xl mb-2 text-slate-900">🚀 Pro</h3>
-                    <div class="mb-6">
-                        <span class="text-4xl font-black text-slate-900">$19.99</span>
-                        <span class="text-slate-500">/mes</span>
+                    <div class="mb-2">
+                        <span class="text-4xl font-black text-slate-900" data-precio-mensual="$19.99" data-precio-anual="$199.90">$19.99</span>
+                        <span class="text-slate-500 plan-periodo">/mes</span>
                     </div>
+                    <p class="text-xs text-emerald-600 font-bold mb-6 hidden" data-ahorro-pro>
+                        Ahorras $39.98 al año
+                    </p>
                     <ul class="space-y-3 mb-8 text-sm text-slate-600">
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Hasta 50 productos</li>
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Todo lo del plan Básico</li>
@@ -271,13 +306,17 @@
                     </ul>
                     <a href="https://wa.me/584266662491?text=Quiero%20el%20plan%20Pro%20de%20Digitaliza%20Urpín" class="block text-center bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-2xl font-bold transition-all">Empezar</a>
                 </div>
+
                 <!-- Plan Business -->
                 <div class="bg-white rounded-[2.5rem] p-8 border-2 border-slate-100 card-shadow">
                     <h3 class="font-extrabold text-2xl mb-2 text-slate-900">💼 Business</h3>
-                    <div class="mb-6">
-                        <span class="text-4xl font-black text-slate-900">$29.99</span>
-                        <span class="text-slate-500">/mes</span>
+                    <div class="mb-2">
+                        <span class="text-4xl font-black text-slate-900" data-precio-mensual="$29.99" data-precio-anual="$299.90">$29.99</span>
+                        <span class="text-slate-500 plan-periodo">/mes</span>
                     </div>
+                    <p class="text-xs text-emerald-600 font-bold mb-6 hidden" data-ahorro-business>
+                        Ahorras $59.98 al año
+                    </p>
                     <ul class="space-y-3 mb-8 text-sm text-slate-600">
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Productos ilimitados</li>
                         <li><i class="fas fa-check text-emerald-500 mr-2"></i> Todo lo del plan Pro</li>
@@ -287,10 +326,25 @@
                     </ul>
                     <a href="https://wa.me/584266662491?text=Quiero%20el%20plan%20Business%20de%20Digitaliza%20Urpín" class="block text-center bg-slate-900 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold transition-all">Empezar</a>
                 </div>
+
             </div>
+
             <p class="text-center mt-10 text-slate-600">
                 🎁 <strong>15 días gratis</strong> + <strong>50% de descuento</strong> el primer mes.
             </p>
+
+            <!-- ========== MENSAJE PROMOCIÓN ANUAL ========== -->
+            <div class="mt-8 bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-3xl p-6 max-w-2xl mx-auto text-center">
+                <p class="text-base md:text-lg font-bold text-slate-800">
+                    <i class="fas fa-gift text-emerald-500 mr-2"></i>
+                    <strong class="text-emerald-700">Promoción Pago Anual:</strong> 2 meses gratis + paga solo 10 meses.
+                </p>
+                <p class="text-sm text-slate-600 mt-2 font-semibold">
+                    <i class="fas fa-shield-alt text-blue-500 mr-1"></i>
+                    Olvida las fluctuaciones de ventas cada mes. Paga una vez al año y trabaja tranquilo.
+                </p>
+            </div>
+            <!-- ============================================ -->
         </div>
     </section>
 
@@ -378,6 +432,60 @@
             <p class="text-slate-500 text-xs">© 2026 Digitaliza Urpín. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <!-- ========== SCRIPT PARA EL TOGGLE MENSUAL/ANUAL ========== -->
+    <script>
+        function cambiarTipoPlan(tipo) {
+            const btnMensual = document.getElementById('btn-mensual');
+            const btnAnual = document.getElementById('btn-anual');
+            const periodos = document.querySelectorAll('.plan-periodo');
+            const precios = document.querySelectorAll('[data-precio-mensual]');
+            const ahorroBasico = document.querySelector('[data-ahorro-basico]');
+            const ahorroPro = document.querySelector('[data-ahorro-pro]');
+            const ahorroBusiness = document.querySelector('[data-ahorro-business]');
+
+            if (tipo === 'anual') {
+                // Activar botón anual
+                btnAnual.className = 'px-6 py-3 rounded-xl font-bold text-sm bg-white shadow-md text-slate-900 transition-all relative';
+                btnMensual.className = 'px-6 py-3 rounded-xl font-bold text-sm text-slate-600 transition-all';
+
+                // Cambiar precios
+                precios.forEach(precio => {
+                    precio.innerText = precio.getAttribute('data-precio-anual');
+                });
+
+                // Cambiar periodo
+                periodos.forEach(periodo => {
+                    periodo.innerText = '/año';
+                });
+
+                // Mostrar ahorros
+                ahorroBasico.classList.remove('hidden');
+                ahorroPro.classList.remove('hidden');
+                ahorroBusiness.classList.remove('hidden');
+            } else {
+                // Activar botón mensual
+                btnMensual.className = 'px-6 py-3 rounded-xl font-bold text-sm bg-white shadow-md text-slate-900 transition-all';
+                btnAnual.className = 'px-6 py-3 rounded-xl font-bold text-sm text-slate-600 transition-all relative';
+
+                // Cambiar precios
+                precios.forEach(precio => {
+                    precio.innerText = precio.getAttribute('data-precio-mensual');
+                });
+
+                // Cambiar periodo
+                periodos.forEach(periodo => {
+                    periodo.innerText = '/mes';
+                });
+
+                // Ocultar ahorros
+                ahorroBasico.classList.add('hidden');
+                ahorroPro.classList.add('hidden');
+                ahorroBusiness.classList.add('hidden');
+            }
+        }
+    </script>
+    <!-- ============================================ -->
 
     <!-- ========== CARGA COMO MÓDULO ========== -->
     <script type="module" src="/js/index.js"></script>
