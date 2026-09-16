@@ -35,7 +35,7 @@
     <!-- Firebase App Check -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js"></script>
 
-    <script type="module" src="./js/menu-core.js?v=20260915"></script>
+    <script type="module" src="./js/menu-core.js?v=20260916"></script>
 </head>
 
 <div id="dynamic-bg" class="fixed inset-0 -z-10 bg-cover bg-center opacity-20 blur-sm scale-110 transition-all duration-700"></div>
@@ -47,40 +47,45 @@
         <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
     </div>
 
-    <!-- Header con Logo Personalizado -->
-    <header id="main-header" class="bg-gradient-to-b from-black/80 to-transparent p-6 text-center shadow-lg">
-        <div class="flex justify-between items-start">
-            <div class="flex-1">
-                <!-- ========== LOGO PERSONALIZADO ========== -->
-                <div id="shop-logo-container" class="hidden mb-4">
-                    <img id="shop-logo" src="" alt="Logo del negocio" 
-                         class="max-h-20 max-w-[200px] mx-auto object-contain drop-shadow-2xl">
-                </div>
-                <!-- ====================================== -->
-                
-                <h1 id="shop-name" class="text-4xl font-normal italic tracking-wide leading-none text-white drop-shadow-lg" 
-                    style="font-family: 'Great Vibes', cursive;">
-                    Cargando...
-                </h1>
-                <p class="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-3">Precios en USD • Bs. de referencia</p>
-            </div>
-            <button onclick="toggleCart()" class="relative active:scale-95 transition-transform">
-                <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-xl">
-                    <i id="cart-icon" class="fas fa-shopping-basket text-xl text-white"></i>
-                </div>
-                <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-black hidden border-2 border-slate-900 shadow-lg">0</span>
-            </button>
+    <!-- ========== HEADER CON LOGO EN ESQUINA SUPERIOR IZQUIERDA ========== -->
+    <header id="main-header" class="relative bg-gradient-to-b from-black/80 to-transparent p-6 pt-8 text-center shadow-lg">
+        
+        <!-- ========== LOGO EN ESQUINA SUPERIOR IZQUIERDA ========== -->
+        <div id="shop-logo-container" class="hidden absolute top-4 left-4 z-20">
+            <img id="shop-logo" src="" alt="Logo del negocio" 
+                 class="max-h-16 max-w-[110px] object-contain drop-shadow-2xl">
         </div>
+        <!-- ======================================================== -->
+        
+        <!-- Botón del carrito en esquina superior derecha -->
+        <button onclick="toggleCart()" class="absolute top-4 right-4 z-20 active:scale-95 transition-transform">
+            <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20 shadow-xl">
+                <i id="cart-icon" class="fas fa-shopping-basket text-xl text-white"></i>
+            </div>
+            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-black hidden border-2 border-slate-900 shadow-lg">0</span>
+        </button>
+
+        <!-- Nombre y palabra resaltada (centrados) -->
+        <div class="pt-16">
+            <h1 id="shop-name" class="text-4xl font-normal italic tracking-wide leading-none text-white drop-shadow-lg" 
+                style="font-family: 'Great Vibes', cursive;">
+                Cargando...
+            </h1>
+            <p class="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-3">Precios en USD • Bs. de referencia</p>
+        </div>
+
+        <!-- Buscador -->
         <div class="mt-10 relative">
             <input type="text" onkeyup="buscar(this.value)" placeholder="Buscar producto..." class="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-[1.5rem] py-5 pl-12 text-xs text-white outline-none focus:bg-white/20 transition-all font-bold uppercase placeholder:text-white/30">
             <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-white/20 text-sm"></i>
         </div>
     </header>
+    <!-- ==================================================================== -->
 
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-8 py-6"></div>
     <main id="product-list" class="px-8 pb-32"></main>
 
-    <!-- Modal de detalle -->
+    <!-- Modal de detalle con carrusel -->
     <div id="detail-view" class="fixed inset-0 z-[500] bg-white hidden flex flex-col">
         <div id="detail-img-container" class="relative h-64 bg-slate-100 rounded-b-3xl flex items-center justify-center">
             <img id="detail-img" class="max-h-full max-w-full object-contain p-4" src="">
@@ -120,14 +125,15 @@
                 <p class="text-lg font-black text-emerald-600 italic"><span id="total-bs">0,00</span> Bs.</p>
             </div>
 
-            <!-- Campo de mesa -->
+            <!-- ========== CAMPO DE MESA ========== -->
             <div id="mesa-container" class="mb-4 hidden">
                 <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Número de Mesa</label>
                 <input type="number" id="input-mesa" placeholder="Ej: 5" min="1" max="99" 
                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all">
             </div>
+            <!-- ==================================== -->
 
-            <!-- Botón único -->
+            <!-- ========== BOTÓN ÚNICO ========== -->
             <button id="btn-pagar-wayu" onclick="pagarYEnviarPedido()" 
                     class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                 <i class="fas fa-credit-card text-2xl"></i>
