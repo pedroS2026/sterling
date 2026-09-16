@@ -316,7 +316,10 @@ function renderInterface() {
     if (shopName) {
         const nombreNegocio = escapeHtml(configNegocio.name || 'Digitaliza');
         const acentoNegocio = escapeHtml(configNegocio.accent || 'Urpín');
-        shopName.innerHTML = `${nombreNegocio} <span class="text-${tema.primary}">${acentoNegocio}</span>`;
+        shopName.innerHTML = `
+            <span class="block">${nombreNegocio}</span>
+            <span class="block text-${tema.primary} text-2xl mt-1">${acentoNegocio}</span>
+`       ;
     }
 
     // ========== RENDERIZAR LOGO PERSONALIZADO ==========
