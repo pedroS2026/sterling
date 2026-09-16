@@ -317,8 +317,8 @@ function renderInterface() {
         const nombreNegocio = escapeHtml(configNegocio.name || 'Digitaliza');
         const acentoNegocio = escapeHtml(configNegocio.accent || 'Urpín');
         shopName.innerHTML = `
-            <span class="block">${nombreNegocio}</span>
-            <span class="block text-${tema.primary} text-2xl mt-1">${acentoNegocio}</span>
+            <span class="block text-3xl md:text-4xl">${nombreNegocio}</span>
+            <span class="block text-2xl md:text-3xl text-${tema.primary} mt-2">${acentoNegocio}</span>
 `       ;
     }
 
