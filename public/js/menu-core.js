@@ -1,6 +1,6 @@
 /**
  * Digitaliza Urpín - Módulo Central del Menú
- * VERSIÓN CON BOTÓN ÚNICO: PAGAR Y ENVIAR PEDIDO
+ * Versión con LOGO PERSONALIZADO por negocio
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -119,7 +119,6 @@ window.modificar = (id, delta) => {
     modificarCantidad(id, delta, actualizarCarritoUI, configNegocio.exentoIVA);
 };
 
-// ========== BOTÓN ÚNICO: PAGAR Y ENVIAR PEDIDO ==========
 window.pagarYEnviarPedido = () => {
     pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV);
 };
@@ -320,6 +319,26 @@ function renderInterface() {
         shopName.innerHTML = `${nombreNegocio} <span class="text-${tema.primary}">${acentoNegocio}</span>`;
     }
 
+    // ========== RENDERIZAR LOGO PERSONALIZADO ==========
+    const logoContainer = document.getElementById('shop-logo-container');
+    const logoImg = document.getElementById('shop-logo');
+
+    if (logoContainer && logoImg) {
+        if (configNegocio.logo && configNegocio.logo.trim() !== '') {
+            logoImg.src = configNegocio.logo;
+            logoImg.onerror = () => {
+                console.warn('⚠️ Error al cargar el logo');
+                logoContainer.classList.add('hidden');
+            };
+            logoContainer.classList.remove('hidden');
+            console.log('🎨 Logo cargado:', configNegocio.logo);
+        } else {
+            logoContainer.classList.add('hidden');
+            console.log('ℹ️ Este negocio no tiene logo configurado');
+        }
+    }
+    // ==================================================
+
     const cartIcon = document.getElementById('cart-icon');
     if (cartIcon) {
         cartIcon.className = `fas ${tema.icon} text-${tema.primary} text-xl`;
@@ -342,10 +361,8 @@ function renderInterface() {
         const tipoActual = configNegocio.type || 'store';
         if (tiposSinMesa.includes(tipoActual)) {
             mesaContainer.classList.add('hidden');
-            console.log('🔧 Campo de mesa OCULTO para tipo:', tipoActual);
         } else {
             mesaContainer.classList.remove('hidden');
-            console.log('🍽️ Campo de mesa MOSTRADO para tipo:', tipoActual);
         }
     }
 
@@ -370,15 +387,12 @@ function renderCategorias(tema) {
 function renderProductos(tema) {
     const container = document.getElementById('product-list');
     if (!container) return;
-    console.log('🛒 renderProductos() ejecutándose...');
-    console.log('📦 productosData (longitud):', productosData.length);
+    console.log('🛒 renderProductos() - cantidad:', productosData.length);
 
     if (!productosData || productosData.length === 0) {
         container.innerHTML = `
             <div class="py-12 text-center">
                 <div class="text-red-500 text-xs font-black uppercase">⚠️ NO HAY PRODUCTOS</div>
-                <div class="text-slate-400 text-[10px] mt-2">Asegúrate de que el cliente tenga productos en Firestore.</div>
-                <div class="text-slate-400 text-[8px] mt-1">CLIENTE_ID: ${CLIENTE_ID}</div>
                 <button onclick="location.reload()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Recargar</button>
             </div>
         `;
@@ -389,8 +403,6 @@ function renderProductos(tema) {
         (categoriaActual === "Todas" || p.category === categoriaActual) &&
         p.name.toLowerCase().includes(busquedaActual.toLowerCase())
     );
-
-    console.log('📊 Productos filtrados:', filtrados.length);
 
     if (filtrados.length === 0) {
         container.innerHTML = `<div class="py-12 text-center text-slate-400 text-xs font-black uppercase tracking-widest">No se encontraron productos</div>`;
@@ -448,7 +460,7 @@ async function actualizarTasa() {
     } catch (e) {
         reintentosTasa++;
         if (reintentosTasa > 3) {
-            console.warn('⚠️ No se pudo obtener la tasa, usando valor anterior:', TASA_BCV);
+            console.warn('⚠️ No se pudo obtener la tasa:', TASA_BCV);
         } else {
             if (tasaTimer) clearTimeout(tasaTimer);
             tasaTimer = setTimeout(actualizarTasa, 2000);
@@ -459,8 +471,8 @@ async function actualizarTasa() {
 function conectarFirestore() {
     console.log('🔍 Conectando a Firestore...');
     console.log('📌 CLIENTE_ID:', CLIENTE_ID);
+
     const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", CLIENTE_ID);
-    console.log('📄 Ruta del documento:', docRef.path);
 
     if (unsubscribeFirestore) {
         unsubscribeFirestore();
@@ -470,15 +482,12 @@ function conectarFirestore() {
     unsubscribeFirestore = onSnapshot(docRef, (snap) => {
         console.log('📦 Documento recibido. Existe:', snap.exists());
         const loader = document.getElementById('loader-global');
+
         if (snap.exists()) {
             const data = snap.data();
-            console.log('📊 Datos completos del documento:', data);
 
             let productosCrudos = data.products || [];
-            console.log('📦 Productos crudos (data.products):', productosCrudos);
-
             if (!Array.isArray(productosCrudos)) {
-                console.warn('⚠️ products no es un array, convirtiendo...');
                 productosCrudos = Object.values(productosCrudos);
             }
 
@@ -489,13 +498,10 @@ function conectarFirestore() {
                 extras: normalizeExtras(p.extras)
             }));
 
-            console.log('🛒 Productos procesados (productosData):', productosData);
+            window.productosDataGlobal = productosData;
             console.log('📊 Cantidad de productos:', productosData.length);
 
-            window.productosDataGlobal = productosData;
-
             const biz = data.business || {};
-            console.log('🏢 Datos del negocio (biz):', biz);
 
             paisActual = biz.pais || 'venezuela';
             window.PAIS_ACTUAL = paisActual;
@@ -509,7 +515,8 @@ function conectarFirestore() {
                 whatsapp: biz.whatsapp || "",
                 exentoIVA: biz.exentoIVA === true || biz.exentoIVA === "true",
                 pais: paisActual,
-                deliveryRecargo: deliveryConfig
+                deliveryRecargo: deliveryConfig,
+                logo: biz.logo || ""
             };
 
             window.configNegocio = configNegocio;
@@ -526,7 +533,7 @@ function conectarFirestore() {
                 actualizarCarritoUI(configNegocio.exentoIVA);
             }
         } else {
-            console.error('❌ El documento NO existe en Firestore para:', CLIENTE_ID);
+            console.error('❌ El documento NO existe:', CLIENTE_ID);
             const shopName = document.getElementById('shop-name');
             if (shopName) shopName.innerHTML = `<span class="text-red-500 text-xs">ID NO REGISTRADO</span>`;
             if (loader) loader.style.display = 'none';

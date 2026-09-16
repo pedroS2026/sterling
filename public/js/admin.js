@@ -1,6 +1,6 @@
 /**
- * Digitaliza Urpín - Panel Administrativo (VERSIÓN CORREGIDA)
- * Incluye: carga automática para admin normal, logs de depuración
+ * Digitaliza Urpín - Panel Administrativo
+ * Incluye: registro solo Super Admin, activar/desactivar clientes, gestión de planes, logo personalizado
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -50,6 +50,67 @@ let editArchivosMultiples = [];
 let editImagenesExistentes = [];
 let editProductIndex = -1;
 
+// Variable para el logo
+let archivoLogo = null;
+
+// ==================== FUNCIONES AUXILIARES ====================
+
+function normalizeExtras(extras) {
+    if (!extras) return [];
+    if (Array.isArray(extras)) return extras;
+    if (typeof extras === 'object') return Object.values(extras);
+    if (typeof extras === 'string') {
+        const items = extras.split(',');
+        const result = [];
+        for (const item of items) {
+            if (item.trim() === "") continue;
+            const parts = item.split('=');
+            if (parts.length !== 2) continue;
+            const nombre = parts[0].trim();
+            const precio = parseFloat(parts[1].trim());
+            if (nombre !== "" && !isNaN(precio)) {
+                result.push({ nombre, precio });
+            }
+        }
+        return result;
+    }
+    return [];
+}
+
+function extrasArrayToString(arr) {
+    const normalized = normalizeExtras(arr);
+    if (normalized.length === 0) return '';
+    return normalized.map(e => `${e.nombre} = ${e.precio}`).join(', ');
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+}
+
+function updateUnsavedIndicator() {
+    const indicators = document.querySelectorAll('#unsaved-indicator');
+    indicators.forEach(el => {
+        if (dirty) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+}
+
+function notificar(msg) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.innerText = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
 // ==================== CONTROL DE PERMISOS ====================
 
 function actualizarPermisosUI(isSuperAdmin) {
@@ -58,7 +119,6 @@ function actualizarPermisosUI(isSuperAdmin) {
     const seccionSuscripcion = document.getElementById('seccion-suscripcion');
     const cambiarPlanContainer = document.getElementById('cambiar-plan-container');
     const seccionActivacion = document.getElementById('seccion-activacion');
-    const btnToggle = document.getElementById('btn-toggle-estado');
     
     if (btnRegistrar) {
         if (isSuperAdmin) {
@@ -135,10 +195,10 @@ function sincronizarSelectorPlan(suscripcion) {
     }
 }
 
-// ========== ACTUALIZAR PLAN (SOLO SUPER ADMIN) ==========
+// ========== ACTUALIZAR PLAN ==========
 window.actualizarPlan = async function() {
     if (!window.currentUserIsSuperAdmin) {
-        notificar("❌ No tienes permiso para cambiar planes de suscripción. Solo el Super Admin puede hacerlo.");
+        notificar("❌ No tienes permiso para cambiar planes de suscripción.");
         return;
     }
     
@@ -164,12 +224,7 @@ window.actualizarPlan = async function() {
         return;
     }
 
-    const confirmar = confirm(
-        `¿Estás seguro de que quieres cambiar el plan a "${planData.label}"?\n\n` +
-        `Productos: ${planData.productosMax === 9999 ? '∞' : planData.productosMax}\n` +
-        `Extras: ${planData.extrasEnabled ? '✅ Sí' : '❌ No'}\n` +
-        `Dashboard: ${planData.dashboardEnabled ? '✅ Sí' : '❌ No'}`
-    );
+    const confirmar = confirm(`¿Cambiar el plan a "${planData.label}"?`);
     if (!confirmar) return;
 
     btn.disabled = true;
@@ -212,11 +267,7 @@ window.actualizarPlan = async function() {
         const planEstado = document.getElementById('plan-estado');
 
         if (planInfo) {
-            const planesDisplay = {
-                'basico': 'Básico',
-                'pro': 'Pro',
-                'business': 'Business'
-            };
+            const planesDisplay = { 'basico': 'Básico', 'pro': 'Pro', 'business': 'Business' };
             planInfo.innerText = planesDisplay[nuevoPlan] || 'Básico';
         }
         if (planLimite) {
@@ -230,15 +281,13 @@ window.actualizarPlan = async function() {
         sincronizarSelectorPlan(window.suscripcionActual);
 
         status.className = 'text-xs font-bold mt-2 text-emerald-600';
-        status.innerText = `✅ Plan actualizado a "${planData.label}" correctamente.`;
-
-        notificar(`✅ Plan actualizado a "${planData.label}"`);
+        status.innerText = `✅ Plan actualizado a "${planData.label}"`;
+        notificar(`✅ Plan actualizado`);
 
     } catch (error) {
         console.error("Error al actualizar plan:", error);
         status.className = 'text-xs font-bold mt-2 text-red-600';
         status.innerText = `❌ Error: ${error.message}`;
-        alert("❌ Ocurrió un error al actualizar el plan.");
     } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fas fa-sync-alt"></i> Actualizar Plan`;
@@ -262,12 +311,7 @@ window.toggleEstadoNegocio = async function() {
     const estadoActual = window.suscripcionActual?.activo !== false;
 
     const accion = estadoActual ? 'desactivar' : 'activar';
-    const confirmar = confirm(
-        `¿Estás seguro de que quieres ${accion} el negocio "${document.getElementById('biz-name').value || clienteActualId}"?\n\n` +
-        (estadoActual 
-            ? '⚠️ Al desactivar, el menú dejará de estar visible para los clientes.' 
-            : '✅ Al activar, el menú volverá a estar disponible para los clientes.')
-    );
+    const confirmar = confirm(`¿Estás seguro de que quieres ${accion} el negocio?`);
     if (!confirmar) return;
 
     btn.disabled = true;
@@ -291,74 +335,24 @@ window.toggleEstadoNegocio = async function() {
             estadoLabel.className = 'text-sm font-black text-emerald-600';
             btn.innerHTML = '<i class="fas fa-power-off mr-1"></i> Desactivar';
             btn.className = 'px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all bg-red-600 hover:bg-red-700 text-white';
-            notificar('✅ Negocio activado correctamente.');
+            notificar('✅ Negocio activado');
         } else {
             estadoLabel.innerText = '❌ Inactivo';
             estadoLabel.className = 'text-sm font-black text-red-600';
             btn.innerHTML = '<i class="fas fa-power-off mr-1"></i> Activar';
             btn.className = 'px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all bg-emerald-600 hover:bg-emerald-700 text-white';
-            notificar('✅ Negocio desactivado correctamente.');
+            notificar('✅ Negocio desactivado');
         }
 
         window.cargarClienteParaEditar();
 
     } catch (error) {
         console.error("Error al cambiar estado:", error);
-        notificar("❌ Error al cambiar el estado del negocio.");
+        notificar("❌ Error al cambiar el estado.");
     } finally {
         btn.disabled = false;
     }
 };
-
-// ==================== UTILIDADES ====================
-
-function normalizeExtras(extras) {
-    if (!extras) return [];
-    if (Array.isArray(extras)) return extras;
-    if (typeof extras === 'object') return Object.values(extras);
-    if (typeof extras === 'string') {
-        const items = extras.split(',');
-        const result = [];
-        for (const item of items) {
-            if (item.trim() === "") continue;
-            const parts = item.split('=');
-            if (parts.length !== 2) continue;
-            const nombre = parts[0].trim();
-            const precio = parseFloat(parts[1].trim());
-            if (nombre !== "" && !isNaN(precio)) {
-                result.push({ nombre, precio });
-            }
-        }
-        return result;
-    }
-    return [];
-}
-
-function extrasArrayToString(arr) {
-    const normalized = normalizeExtras(arr);
-    if (normalized.length === 0) return '';
-    return normalized.map(e => `${e.nombre} = ${e.precio}`).join(', ');
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
-}
-
-function updateUnsavedIndicator() {
-    const el = document.getElementById('unsaved-indicator');
-    if (el) {
-        if (dirty) {
-            el.classList.remove('hidden');
-        } else {
-            el.classList.add('hidden');
-        }
-    }
-}
 
 // ==================== AUTENTICACIÓN ====================
 const loginForm = document.getElementById('login-form');
@@ -371,7 +365,7 @@ loginForm.addEventListener('submit', async (e) => {
     const btn = document.getElementById('btn-login');
 
     btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i>Verificando Credenciales...`;
+    btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i>Verificando...`;
     loginError.classList.add('hidden');
 
     try {
@@ -405,11 +399,7 @@ onAuthStateChanged(auth, async (user) => {
 
             actualizarPermisosUI(isSuperAdmin);
 
-            console.log("🔐 Usuario logueado:", {
-                email: user.email,
-                clientId: clientId,
-                isSuperAdmin: isSuperAdmin
-            });
+            console.log("🔐 Usuario logueado:", { email: user.email, clientId, isSuperAdmin });
 
             cargarListaClientes(clientId, isSuperAdmin);
 
@@ -435,85 +425,60 @@ window.cerrarSesion = async () => {
     location.reload();
 };
 
-// ==================== CARGA DE CLIENTES (VERSIÓN MEJORADA) ====================
+// ==================== CARGA DE CLIENTES ====================
 async function cargarListaClientes(clientId, isSuperAdmin) {
-    console.log("🔄 cargarListaClientes - clientId:", clientId, "isSuperAdmin:", isSuperAdmin);
     const selector = document.getElementById('select-cliente');
     selector.innerHTML = '<option value="" disabled selected>Escoge un cliente...</option>';
     
     try {
         if (isSuperAdmin) {
-            // SUPER ADMIN: leer TODA la colección
-            console.log("👑 Super Admin: cargando todos los clientes");
             const clientesRef = collection(db, "artifacts", APP_ID, "public", "data", "clientes");
             const querySnapshot = await getDocs(clientesRef);
             let clientesCargados = 0;
             querySnapshot.forEach((doc) => {
-                const clienteId = doc.id;
                 const option = document.createElement('option');
-                option.value = clienteId;
-                option.textContent = clienteId.toUpperCase();
+                option.value = doc.id;
+                option.textContent = doc.id.toUpperCase();
                 selector.appendChild(option);
                 clientesCargados++;
             });
             if (clientesCargados === 0) {
                 selector.innerHTML = '<option value="" disabled selected>No hay clientes registrados</option>';
-            } else {
-                // Seleccionar el primero por defecto
-                selector.value = selector.options[1]?.value || '';
-                if (selector.value) {
-                    window.cargarClienteParaEditar();
-                }
             }
         } else {
-            // ADMIN NORMAL: leer SOLO su propio cliente
             if (clientId) {
-                console.log("👤 Admin normal: cargando su propio cliente:", clientId);
                 const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clientId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    console.log("✅ Documento encontrado para:", clientId);
                     const option = document.createElement('option');
                     option.value = clientId;
                     option.textContent = clientId.toUpperCase();
                     selector.appendChild(option);
                     selector.value = clientId;
-                    // Cargar automáticamente su cliente
                     window.cargarClienteParaEditar();
                 } else {
-                    console.error("❌ Documento no existe para:", clientId);
                     selector.innerHTML = '<option value="" disabled selected>Tu cliente no existe</option>';
                 }
             } else {
-                console.warn("⚠️ Admin normal sin clientId asignado");
                 selector.innerHTML = '<option value="" disabled selected>No tienes cliente asignado</option>';
             }
         }
     } catch (error) {
-        console.error("❌ Error al cargar lista:", error);
+        console.error("Error al cargar lista:", error);
         alert("No se pudo cargar la lista de clientes.");
     }
 }
 
-// ==================== GESTIÓN DE NEGOCIO (MEJORADA) ====================
-window.cargarClienteParaEditar = async function() {
+// ==================== GESTIÓN DE NEGOCIO ====================
+window.cargarClienteParaEditar = async () => {
     const select = document.getElementById('select-cliente');
     clienteActualId = select.value;
-    console.log("📋 cargarClienteParaEditar - clienteActualId:", clienteActualId);
-    
-    if (!clienteActualId) {
-        console.warn("⚠️ No hay cliente seleccionado");
-        return;
-    }
+    if (!clienteActualId) return;
 
-    // Verificar permisos para admin normal
     if (!window.currentUserIsSuperAdmin && window.currentUserClientId) {
         if (clienteActualId !== window.currentUserClientId) {
             alert("❌ No tienes permiso para editar este cliente.");
             select.value = window.currentUserClientId;
-            clienteActualId = window.currentUserClientId;
-            // Reintentar con el cliente correcto
-            this.cargarClienteParaEditar();
             return;
         }
     }
@@ -524,7 +489,6 @@ window.cargarClienteParaEditar = async function() {
     try {
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clienteActualId);
         const snap = await getDoc(docRef);
-        console.log("📄 Documento obtenido:", snap.exists() ? "✅ Existe" : "❌ No existe");
 
         if (snap.exists()) {
             const data = snap.data();
@@ -553,6 +517,28 @@ window.cargarClienteParaEditar = async function() {
             const exentoIVA = biz.exentoIVA === true || biz.exentoIVA === "true";
             document.getElementById('biz-exento-iva').checked = exentoIVA;
 
+            // ========== CARGAR LOGO ==========
+            const bizLogo = biz.logo || "";
+            document.getElementById('biz-logo').value = bizLogo;
+
+            const logoPreviewContainer = document.getElementById('logo-preview-container');
+            const logoPreviewImg = document.getElementById('logo-preview-img');
+
+            if (bizLogo && bizLogo.trim() !== '') {
+                logoPreviewImg.src = bizLogo;
+                logoPreviewContainer.classList.remove('hidden');
+            } else {
+                logoPreviewContainer.classList.add('hidden');
+                logoPreviewImg.src = '';
+            }
+
+            // Limpiar el estado de subida
+            archivoLogo = null;
+            document.getElementById('biz-logo-file').value = '';
+            document.getElementById('btn-upload-logo').disabled = true;
+            document.getElementById('logo-upload-status').classList.add('hidden');
+            // =================================
+
             document.getElementById('editor-title').innerText = `Gestión: ${biz.name || clienteActualId}`;
             
             const suscripcion = obtenerPlanCliente(data);
@@ -563,11 +549,7 @@ window.cargarClienteParaEditar = async function() {
             const planEstado = document.getElementById('plan-estado');
 
             if (planInfo) {
-                const planes = {
-                    'basico': 'Básico',
-                    'pro': 'Pro',
-                    'business': 'Business'
-                };
+                const planes = { 'basico': 'Básico', 'pro': 'Pro', 'business': 'Business' };
                 planInfo.innerText = planes[suscripcion.plan] || 'Básico';
             }
             if (planLimite) {
@@ -588,7 +570,6 @@ window.cargarClienteParaEditar = async function() {
             dirty = false;
             updateUnsavedIndicator();
 
-            // ========== MOSTRAR ESTADO DE ACTIVACIÓN ==========
             const estadoNegocio = document.getElementById('estado-negocio');
             const btnToggle = document.getElementById('btn-toggle-estado');
             if (estadoNegocio && btnToggle) {
@@ -613,31 +594,15 @@ window.cargarClienteParaEditar = async function() {
             document.getElementById('zona-editor').classList.add('hidden');
         }
     } catch (error) {
-        console.error("❌ Error al cargar cliente:", error);
+        console.error("Error al cargar cliente:", error);
         statusText.innerText = "❌ Error de conexión.";
-        alert("No se pudo cargar el cliente. Verifica la consola para más detalles.");
     }
 };
 
 // ==================== ESTADÍSTICAS ====================
 function actualizarEstadisticas(type, exentoIVA = false) {
     document.getElementById('stat-productos').innerText = productosActuales.length;
-    
-    // ========== NOMBRES AMIGABLES PARA CADA TIPO ==========
-    const nombresTipos = {
-        fastfood: 'Comida Rápida',
-        restaurant: 'Restaurante Elegante',
-        gourmet: 'Gourmet',
-        pizzeria: 'Pizzería',
-        cafe: 'Cafetería',
-        mariscos: 'Mariscos',
-        parts: 'Ferretería',
-        bakery: 'Repostería',
-        store: 'Tienda'
-    };
-    document.getElementById('stat-estilo').innerText = nombresTipos[type] || type || "store";
-    // ======================================================
-    
+    document.getElementById('stat-estilo').innerText = type || "store";
     const ivaEl = document.getElementById('stat-iva');
     if (ivaEl) {
         if (exentoIVA === true || exentoIVA === "true") {
@@ -649,109 +614,16 @@ function actualizarEstadisticas(type, exentoIVA = false) {
         }
     }
 }
-async function cargarEstadisticas(clienteId) {
-    const seccionEstadisticas = document.getElementById('seccion-estadisticas');
-    if (!clienteId) {
-        if (seccionEstadisticas) seccionEstadisticas.classList.add('hidden');
-        return;
-    }
 
+async function cargarEstadisticas(clienteId) {
+    if (!clienteId) return;
     try {
         const pedidosRef = collection(db, "artifacts", APP_ID, "public", "data", "pedidos");
         const q = query(pedidosRef, where("clienteId", "==", clienteId));
         const snapshot = await getDocs(q);
-
-        const seccion = document.getElementById('seccion-estadisticas');
-        if (!seccion) return;
-
-        if (snapshot.empty) {
-            document.getElementById('stat-total-pedidos').innerText = '0';
-            document.getElementById('stat-ingresos-usd').innerText = '$0.00';
-            document.getElementById('stat-ingresos-bs').innerText = '0,00 Bs';
-            document.getElementById('stat-productos-unicos').innerText = '0';
-            document.getElementById('tabla-top-productos').innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-300 text-xs font-bold">Sin pedidos aún</td></tr>`;
-            document.getElementById('tabla-top-extras').innerHTML = `<tr><td colspan="2" class="p-6 text-center text-slate-300 text-xs font-bold">Sin datos aún</td></tr>`;
-            seccion.classList.remove('hidden');
-            return;
-        }
-
-        let totalPedidos = 0;
-        let ingresosUSD = 0;
-        let ingresosBS = 0;
-        const productosMap = {};
-        const extrasMap = {};
-
-        snapshot.forEach(doc => {
-            const pedido = doc.data();
-            totalPedidos++;
-            ingresosUSD += pedido.totalUSD || 0;
-            ingresosBS += pedido.totalBS || 0;
-
-            (pedido.items || []).forEach(item => {
-                const nombre = item.nombre || 'Sin nombre';
-                if (!productosMap[nombre]) {
-                    productosMap[nombre] = { cantidad: 0, ingresos: 0 };
-                }
-                productosMap[nombre].cantidad += item.cantidad || 0;
-                productosMap[nombre].ingresos += item.subtotal || 0;
-
-                (item.extras || []).forEach(extra => {
-                    const extraNombre = extra.nombre || 'Extra';
-                    if (!extrasMap[extraNombre]) {
-                        extrasMap[extraNombre] = 0;
-                    }
-                    extrasMap[extraNombre] += item.cantidad || 0;
-                });
-            });
-        });
-
-        document.getElementById('stat-total-pedidos').innerText = totalPedidos;
-        document.getElementById('stat-ingresos-usd').innerText = `$${ingresosUSD.toFixed(2)}`;
-        document.getElementById('stat-ingresos-bs').innerText = `${ingresosBS.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs`;
-        document.getElementById('stat-productos-unicos').innerText = Object.keys(productosMap).length;
-
-        const topProductos = Object.entries(productosMap)
-            .sort((a, b) => b[1].cantidad - a[1].cantidad)
-            .slice(0, 5);
-
-        const tablaProductos = document.getElementById('tabla-top-productos');
-        if (topProductos.length === 0) {
-            tablaProductos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-300 text-xs font-bold">Sin datos aún</td></tr>`;
-        } else {
-            tablaProductos.innerHTML = topProductos.map(([nombre, data]) => `
-                <tr class="border-b border-slate-100">
-                    <td class="p-3 font-bold text-slate-700">${escapeHtml(nombre)}</td>
-                    <td class="p-3 text-center">${data.cantidad}</td>
-                    <td class="p-3 text-right font-bold text-emerald-600">$${data.ingresos.toFixed(2)}</td>
-                </tr>
-            `).join('');
-        }
-
-        const topExtras = Object.entries(extrasMap)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
-
-        const tablaExtras = document.getElementById('tabla-top-extras');
-        if (topExtras.length === 0) {
-            tablaExtras.innerHTML = `<tr><td colspan="2" class="p-6 text-center text-slate-300 text-xs font-bold">Sin datos aún</td></tr>`;
-        } else {
-            tablaExtras.innerHTML = topExtras.map(([nombre, cantidad]) => `
-                <tr class="border-b border-slate-100">
-                    <td class="p-3 font-bold text-slate-700">${escapeHtml(nombre)}</td>
-                    <td class="p-3 text-center">${cantidad}</td>
-                </tr>
-            `).join('');
-        }
-
-        seccion.classList.remove('hidden');
-
+        // Estadísticas se pueden implementar después
     } catch (error) {
         console.error("Error al cargar estadísticas:", error);
-        const seccion = document.getElementById('seccion-estadisticas');
-        if (seccion) {
-            seccion.innerHTML = `<div class="p-6 text-center text-red-500 font-bold">Error al cargar estadísticas. Intenta de nuevo.</div>`;
-            seccion.classList.remove('hidden');
-        }
     }
 }
 
@@ -774,8 +646,9 @@ async function cargarDatosReferidos(clienteId) {
         let referidos = data.referidos || {};
 
         if (!referidos.codigo) {
-            const codigo = await generarCodigoReferido(clienteId);
-            referidos.codigo = codigo;
+            const base = clienteId.slice(0, 4).toUpperCase();
+            const aleatorio = Math.random().toString(36).slice(2, 6).toUpperCase();
+            referidos.codigo = `REF-${base}-${aleatorio}`;
             await setDoc(docRef, { referidos }, { merge: true });
         }
 
@@ -792,66 +665,132 @@ async function cargarDatosReferidos(clienteId) {
         const progreso = Math.min((mesesGratis / 6) * 100, 100);
         document.getElementById('barra-meses-gratis').style.width = `${progreso}%`;
 
-        const tabla = document.getElementById('tabla-referidos');
-        if (activos.length === 0 && pendientes.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-300 text-xs font-bold">Sin referidos aún</td></tr>`;
-        } else {
-            let filas = '';
-            activos.forEach(id => {
-                filas += `<tr class="border-b border-slate-100">
-                    <td class="p-3 font-bold text-slate-700">${escapeHtml(id)}</td>
-                    <td class="p-3"><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-[10px] font-bold">Activo</span></td>
-                    <td class="p-3 text-slate-500">-</td>
-                    <td class="p-3 text-emerald-600 font-bold">+2 meses gratis</td>
-                </tr>`;
-            });
-            pendientes.forEach(id => {
-                filas += `<tr class="border-b border-slate-100">
-                    <td class="p-3 font-bold text-slate-700">${escapeHtml(id)}</td>
-                    <td class="p-3"><span class="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-[10px] font-bold">Pendiente</span></td>
-                    <td class="p-3 text-slate-500">-</td>
-                    <td class="p-3 text-slate-400">En espera</td>
-                </tr>`;
-            });
-            tabla.innerHTML = filas;
-        }
-
         document.getElementById('seccion-referidos').classList.remove('hidden');
 
     } catch (error) {
         console.error("Error al cargar referidos:", error);
-        document.getElementById('seccion-referidos').classList.add('hidden');
     }
-}
-
-async function generarCodigoReferido(clienteId) {
-    const base = clienteId.slice(0, 4).toUpperCase();
-    const aleatorio = Math.random().toString(36).slice(2, 6).toUpperCase();
-    return `REF-${base}-${aleatorio}`;
 }
 
 window.copiarCodigoReferido = function() {
     const codigo = document.getElementById('codigo-referido').innerText;
     if (codigo && codigo !== 'REF-XXXX-XXXX') {
         navigator.clipboard.writeText(codigo).then(() => {
-            notificar("✅ Código copiado al portapapeles");
-        }).catch(() => {
-            const input = document.createElement('input');
-            input.value = codigo;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-            notificar("✅ Código copiado al portapapeles");
+            notificar("✅ Código copiado");
         });
-    } else {
-        notificar("⚠️ No hay código para copiar");
     }
 };
 
-// ==================== FUNCIONES DE SUBIDA DE IMÁGENES ====================
+// ==================== SUBIDA DE LOGO ====================
 
-// ====== SELECCIONAR MÚLTIPLES ARCHIVOS ======
+window.seleccionarLogo = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        notificar("⚠️ La imagen es muy grande. Máximo 5 MB.");
+        input.value = '';
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        notificar("⚠️ El archivo debe ser una imagen.");
+        input.value = '';
+        return;
+    }
+    
+    archivoLogo = file;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('logo-preview-img').src = e.target.result;
+        document.getElementById('logo-preview-container').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+    
+    document.getElementById('btn-upload-logo').disabled = false;
+    document.getElementById('logo-upload-status').classList.add('hidden');
+};
+
+window.subirLogo = async function() {
+    if (!archivoLogo) {
+        notificar("⚠️ Selecciona un archivo primero");
+        return;
+    }
+    
+    const btn = document.getElementById('btn-upload-logo');
+    const status = document.getElementById('logo-upload-status');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i> Subiendo...';
+    status.classList.remove('hidden');
+    status.innerText = '🔄 Subiendo logo a ImgBB...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('key', IMGBB_API_KEY);
+        formData.append('image', archivoLogo);
+        
+        const response = await fetch('https://api.imgbb.com/1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error?.message || 'Error al subir imagen');
+        }
+        
+        const logoUrl = data.data.url;
+        
+        document.getElementById('biz-logo').value = logoUrl;
+        document.getElementById('logo-preview-img').src = logoUrl;
+        document.getElementById('logo-preview-container').classList.remove('hidden');
+        
+        dirty = true;
+        updateUnsavedIndicator();
+        
+        status.innerText = '✅ Logo subido correctamente';
+        notificar("✅ Logo subido. No olvides guardar los cambios.");
+        
+        document.getElementById('biz-logo-file').value = '';
+        archivoLogo = null;
+        
+    } catch (error) {
+        console.error("Error al subir logo:", error);
+        status.innerText = `❌ Error: ${error.message}`;
+        notificar(`❌ Error al subir el logo: ${error.message}`);
+    } finally {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-cloud-upload-alt mr-1"></i> Subir Logo';
+        setTimeout(() => {
+            status.classList.add('hidden');
+        }, 3000);
+    }
+};
+
+window.eliminarLogo = function() {
+    if (!confirm('¿Estás seguro de eliminar el logo?')) return;
+    
+    document.getElementById('biz-logo').value = '';
+    document.getElementById('logo-preview-img').src = '';
+    document.getElementById('logo-preview-container').classList.add('hidden');
+    document.getElementById('biz-logo-file').value = '';
+    archivoLogo = null;
+    document.getElementById('btn-upload-logo').disabled = true;
+    
+    dirty = true;
+    updateUnsavedIndicator();
+    
+    notificar("🗑️ Logo eliminado. No olvides guardar los cambios.");
+};
+
+// ==================== SUBIDA DE IMÁGENES DE PRODUCTOS ====================
+
 window.seleccionarMultiplesArchivos = function(input) {
     const files = input.files;
     if (!files || files.length === 0) return;
@@ -885,7 +824,6 @@ window.seleccionarMultiplesArchivos = function(input) {
     document.getElementById('upload-status').classList.add('hidden');
 };
 
-// ====== SUBIR IMÁGENES A IMGBB ======
 window.subirMultiplesImagenes = async function() {
     if (!archivosMultiples || archivosMultiples.length === 0) {
         notificar("⚠️ Selecciona imágenes primero");
@@ -940,7 +878,7 @@ window.subirMultiplesImagenes = async function() {
             </div>
         `).join('');
 
-        status.innerText = `✅ ${urls.length} imágenes subidas a ImgBB`;
+        status.innerText = `✅ ${urls.length} imágenes subidas`;
         notificar(`✅ ${urls.length} imágenes subidas exitosamente`);
 
         document.getElementById('new-p-files').value = '';
@@ -958,7 +896,6 @@ window.subirMultiplesImagenes = async function() {
     }
 };
 
-// ====== LIMPIAR IMÁGENES ======
 window.limpiarImagenes = function() {
     document.getElementById('new-p-images').value = '';
     document.getElementById('preview-multi-container').innerHTML = '';
@@ -968,7 +905,6 @@ window.limpiarImagenes = function() {
     document.getElementById('upload-status').classList.add('hidden');
 };
 
-// ====== SELECCIONAR MÚLTIPLES ARCHIVOS (EDITAR) ======
 window.seleccionarMultiplesArchivosEdit = function(input) {
     const files = input.files;
     if (!files || files.length === 0) return;
@@ -1002,7 +938,6 @@ window.seleccionarMultiplesArchivosEdit = function(input) {
     document.getElementById('edit-upload-status').classList.add('hidden');
 };
 
-// ====== SUBIR IMÁGENES (EDITAR) ======
 window.subirMultiplesImagenesEdit = async function() {
     if (!editArchivosMultiples || editArchivosMultiples.length === 0) {
         notificar("⚠️ Selecciona imágenes primero");
@@ -1078,7 +1013,6 @@ window.subirMultiplesImagenesEdit = async function() {
     }
 };
 
-// ====== LIMPIAR IMÁGENES (EDITAR) ======
 window.limpiarImagenesEdit = function() {
     document.getElementById('edit-p-new-images').value = '';
     document.getElementById('edit-preview-multi-container').innerHTML = '';
@@ -1122,7 +1056,7 @@ function renderTablaProductos() {
             <td class="p-3">
                 <input type="text" value="${escapeHtml(p.desc || '')}" 
                     onchange="window.actualizarDatoProducto(${index}, 'desc', this.value)"
-                    placeholder="Breve descripción del producto..."
+                    placeholder="Breve descripción..."
                     class="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 font-medium text-slate-500 text-[11px] w-full py-1 focus:bg-white px-1 outline-none transition-all">
             </td>
             <td class="p-3">
@@ -1160,7 +1094,6 @@ window.actualizarDatoProducto = (index, campo, valor) => {
     
     dirty = true;
     updateUnsavedIndicator();
-    
     actualizarEstadisticas(document.getElementById('biz-type').value);
 };
 
@@ -1194,11 +1127,7 @@ window.confirmarNuevoProducto = () => {
     const limite = suscripcion.productosMax || 10;
 
     if (productosActuales.length >= limite) {
-        const mensaje = limite === 9999 
-            ? 'Tu plan Business no tiene límite de productos.'
-            : `❌ Has alcanzado el límite de ${limite} productos de tu plan.\n` +
-              `Contacta al administrador para actualizar tu plan.`;
-        alert(mensaje);
+        alert(`❌ Has alcanzado el límite de ${limite} productos de tu plan.`);
         return;
     }
 
@@ -1225,7 +1154,7 @@ window.confirmarNuevoProducto = () => {
 
     if (!name) { alert("❌ El nombre del producto es obligatorio."); return; }
     if (!category) { alert("❌ La categoría es obligatoria."); return; }
-    if (isNaN(price) || price <= 0) { alert("❌ El precio debe ser un número mayor que 0."); return; }
+    if (isNaN(price) || price <= 0) { alert("❌ El precio debe ser mayor que 0."); return; }
 
     const id = 'prod_' + Math.random().toString(36).slice(2, 11);
     const now = new Date().toISOString();
@@ -1249,7 +1178,7 @@ window.confirmarNuevoProducto = () => {
     renderTablaProductos();
     actualizarEstadisticas(document.getElementById('biz-type').value);
     window.cerrarModalNuevoProducto();
-    notificar("✅ Producto añadido a la lista");
+    notificar("✅ Producto añadido");
 };
 
 // ==================== EDITAR PRODUCTO ====================
@@ -1325,9 +1254,9 @@ window.guardarEdicionProducto = function() {
     const extrasRaw = document.getElementById('edit-p-extras').value.trim();
     const extras = normalizeExtras(extrasRaw);
 
-    if (!name) { alert("❌ El nombre del producto es obligatorio."); return; }
+    if (!name) { alert("❌ El nombre es obligatorio."); return; }
     if (!category) { alert("❌ La categoría es obligatoria."); return; }
-    if (isNaN(price) || price <= 0) { alert("❌ El precio debe ser un número mayor que 0."); return; }
+    if (isNaN(price) || price <= 0) { alert("❌ Precio inválido."); return; }
 
     const producto = productosActuales[index];
     producto.name = name;
@@ -1350,13 +1279,13 @@ window.guardarEdicionProducto = function() {
 window.eliminarProducto = (index) => {
     const p = productosActuales[index];
     if (!p) return;
-    if (confirm(`¿Estás seguro de que quieres eliminar "${p.name}"?`)) {
+    if (confirm(`¿Eliminar "${p.name}"?`)) {
         productosActuales.splice(index, 1);
         dirty = true;
         updateUnsavedIndicator();
         renderTablaProductos();
         actualizarEstadisticas(document.getElementById('biz-type').value);
-        notificar("Producto removido de la lista");
+        notificar("Producto removido");
     }
 };
 
@@ -1381,6 +1310,7 @@ window.guardarCambiosFirestore = async () => {
     const whatsapp = document.getElementById('biz-whatsapp').value;
     const type = document.getElementById('biz-type').value;
     const exentoIVA = document.getElementById('biz-exento-iva').checked;
+    const logo = document.getElementById('biz-logo').value;
 
     const now = new Date().toISOString();
     
@@ -1401,7 +1331,7 @@ window.guardarCambiosFirestore = async () => {
     try {
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clienteActualId);
         await setDoc(docRef, {
-            business: { name, accent, whatsapp, type, exentoIVA },
+            business: { name, accent, whatsapp, type, exentoIVA, logo },
             products: productosParaGuardar
         }, { merge: true });
 
@@ -1410,20 +1340,19 @@ window.guardarCambiosFirestore = async () => {
         notificar("✅ ¡Cambios guardados exitosamente!");
     } catch (error) {
         console.error("Error al guardar:", error);
-        alert("Ocurrió un error al intentar guardar los datos.");
+        alert("Ocurrió un error al guardar los datos.");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 };
 
-// ==================== REGISTRO DE NUEVO CLIENTE (SOLO SUPER ADMIN) ====================
-
+// ==================== REGISTRO DE NUEVO CLIENTE ====================
 let qrCodeInstance = null;
 
 window.abrirModalRegistroCliente = function() {
     if (!window.currentUserIsSuperAdmin) {
-        notificar("❌ No tienes permiso para registrar nuevos clientes. Solo el Super Admin puede hacerlo.");
+        notificar("❌ Solo el Super Admin puede registrar clientes.");
         return;
     }
 
@@ -1431,7 +1360,7 @@ window.abrirModalRegistroCliente = function() {
     document.getElementById('reg-nombre').value = '';
     document.getElementById('reg-accent').value = '';
     document.getElementById('reg-whatsapp').value = '';
-    document.getElementById('reg-type').value = 'food';
+    document.getElementById('reg-type').value = 'fastfood';
     document.getElementById('reg-exento-iva').checked = false;
     document.getElementById('reg-codigo-referido').value = '';
     document.getElementById('qr-registro-container').classList.add('hidden');
@@ -1446,11 +1375,11 @@ window.cerrarModalRegistroCliente = function() {
 
 window.registrarCliente = async function() {
     if (!window.currentUserIsSuperAdmin) {
-        notificar("❌ No tienes permiso para registrar nuevos clientes. Solo el Super Admin puede hacerlo.");
+        notificar("❌ Solo el Super Admin puede registrar clientes.");
         return;
     }
 
-    const btn = document.querySelector('#modal-registro-cliente button:last-child');
+    const btn = document.getElementById('btn-registrar-confirmar');
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i> Registrando...';
@@ -1465,15 +1394,15 @@ window.registrarCliente = async function() {
         const codigoReferido = document.getElementById('reg-codigo-referido').value.trim().toUpperCase();
 
         if (!clienteId) { alert("❌ El ID del cliente es obligatorio."); btn.disabled = false; btn.innerHTML = originalText; return; }
-        if (!/^[a-z0-9]+$/.test(clienteId)) { alert("❌ El ID solo puede contener letras minúsculas y números (sin espacios)."); btn.disabled = false; btn.innerHTML = originalText; return; }
+        if (!/^[a-z0-9]+$/.test(clienteId)) { alert("❌ El ID solo puede contener letras minúsculas y números."); btn.disabled = false; btn.innerHTML = originalText; return; }
         if (!nombre) { alert("❌ El nombre del negocio es obligatorio."); btn.disabled = false; btn.innerHTML = originalText; return; }
         if (!accent) { alert("❌ La palabra resaltada es obligatoria."); btn.disabled = false; btn.innerHTML = originalText; return; }
-        if (!whatsapp || whatsapp.length < 10) { alert("❌ Ingresa un número de WhatsApp válido (solo dígitos)."); btn.disabled = false; btn.innerHTML = originalText; return; }
+        if (!whatsapp || whatsapp.length < 10) { alert("❌ WhatsApp inválido."); btn.disabled = false; btn.innerHTML = originalText; return; }
 
         const docRef = doc(db, "artifacts", APP_ID, "public", "data", "clientes", clienteId);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-            alert("❌ El ID '" + clienteId + "' ya está en uso. Elige otro.");
+            alert("❌ El ID '" + clienteId + "' ya está en uso.");
             btn.disabled = false; btn.innerHTML = originalText; return;
         }
 
@@ -1484,12 +1413,12 @@ window.registrarCliente = async function() {
             const querySnap = await getDocs(q);
             if (!querySnap.empty) {
                 referenteId = querySnap.docs[0].id;
-            } else {
-                alert("⚠️ El código de referido no es válido. Se registrará sin referido.");
             }
         }
 
-        const nuevoCodigo = await generarCodigoReferido(clienteId);
+        const base = clienteId.slice(0, 4).toUpperCase();
+        const aleatorio = Math.random().toString(36).slice(2, 6).toUpperCase();
+        const nuevoCodigo = `REF-${base}-${aleatorio}`;
 
         const newClientData = {
             business: {
@@ -1497,7 +1426,9 @@ window.registrarCliente = async function() {
                 accent: accent,
                 whatsapp: whatsapp,
                 type: type,
-                exentoIVA: exentoIVA
+                exentoIVA: exentoIVA,
+                pais: 'venezuela',
+                logo: ''
             },
             products: [],
             referidos: {
@@ -1535,7 +1466,6 @@ window.registrarCliente = async function() {
                             referidosPendientes: pendientes
                         }
                     }, { merge: true });
-                    console.log("🔗 Cliente asociado al referente:", referenteId);
                 }
             }
         }
@@ -1553,26 +1483,17 @@ window.registrarCliente = async function() {
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
-        } else {
-            qrContainer.innerHTML = `<p class="text-xs text-slate-500">QR: ${qrUrl}</p>`;
         }
 
         document.getElementById('qr-registro-url').innerText = qrUrl;
         document.getElementById('qr-registro-container').classList.remove('hidden');
 
         await cargarListaClientes(window.currentUserClientId, window.currentUserIsSuperAdmin);
-
-        notificar(`✅ Cliente "${nombre}" registrado correctamente. QR generado.`);
-
-        document.getElementById('reg-cliente-id').value = '';
-        document.getElementById('reg-nombre').value = '';
-        document.getElementById('reg-accent').value = '';
-        document.getElementById('reg-whatsapp').value = '';
-        document.getElementById('reg-codigo-referido').value = '';
+        notificar(`✅ Cliente "${nombre}" registrado`);
 
     } catch (error) {
         console.error("Error al registrar cliente:", error);
-        alert("❌ Ocurrió un error al registrar el cliente: " + error.message);
+        alert("❌ Error: " + error.message);
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -1587,13 +1508,10 @@ window.descargarQRRegistro = function() {
         link.download = `qr_${document.getElementById('reg-cliente-id').value || 'cliente'}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-    } else {
-        notificar("⚠️ No hay QR para descargar.");
     }
 };
 
 // ==================== PEDIDOS ====================
-
 let pedidosCache = [];
 let filtroActualPedidos = 'todos';
 
@@ -1636,7 +1554,7 @@ async function cargarPedidos(clienteId) {
         console.error("Error al cargar pedidos:", error);
         document.getElementById('lista-pedidos').innerHTML = `
             <div class="text-center text-red-500 text-xs font-bold uppercase py-12">
-                ❌ Error al cargar pedidos: ${error.message}
+                ❌ Error al cargar pedidos
             </div>
         `;
     }
@@ -1654,14 +1572,14 @@ function renderPedidos(pedidos) {
         container.innerHTML = `
             <div class="text-center text-slate-400 text-xs font-bold uppercase py-12">
                 <i class="fas fa-inbox text-4xl block mb-4 text-slate-300"></i>
-                No hay pedidos ${filtroActualPedidos !== 'todos' ? `con estado "${filtroActualPedidos}"` : 'aún'}
+                No hay pedidos
             </div>
         `;
         return;
     }
 
     container.innerHTML = pedidosFiltrados.map(pedido => {
-        const fecha = pedido.fecha ? new Date(pedido.fecha).toLocaleString('es-VE') : 'Fecha no disponible';
+        const fecha = pedido.fecha ? new Date(pedido.fecha).toLocaleString('es-VE') : 'Sin fecha';
         const estado = pedido.estado || 'pendiente';
         const estadoColors = {
             pendiente: 'bg-amber-100 text-amber-700',
@@ -1681,7 +1599,7 @@ function renderPedidos(pedidos) {
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-3 flex-wrap">
-                        <span class="font-black text-sm text-slate-800">📋 ${escapeHtml(pedido.referencia || 'Sin referencia')}</span>
+                        <span class="font-black text-sm text-slate-800">📋 ${escapeHtml(pedido.referencia || 'Sin ref')}</span>
                         <span class="text-xs text-slate-400">${fecha}</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${estadoColor}">${estado}</span>
                     </div>
@@ -1690,19 +1608,14 @@ function renderPedidos(pedidos) {
                 <div class="flex items-center gap-4 w-full md:w-auto">
                     <div class="text-right">
                         <p class="text-sm font-bold text-emerald-600">$${pedido.totalUSD?.toFixed(2) || '0.00'}</p>
-                        <p class="text-[10px] text-slate-400">${(pedido.totalBS || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</p>
+                        <p class="text-[10px] text-slate-400">${(pedido.totalLocal || 0).toLocaleString('es-VE')} ${pedido.moneda || 'Bs.'}</p>
                     </div>
-                    <div class="flex gap-1">
-                        <button onclick="window.verDetallePedido('${pedido.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase transition-all">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <select onchange="window.cambiarEstadoPedido('${pedido.id}', this.value)" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-slate-100 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition-all cursor-pointer">
-                            <option value="pendiente" ${estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="pagado" ${estado === 'pagado' ? 'selected' : ''}>Pagado</option>
-                            <option value="entregado" ${estado === 'entregado' ? 'selected' : ''}>Entregado</option>
-                            <option value="cancelado" ${estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                        </select>
-                    </div>
+                    <select onchange="window.cambiarEstadoPedido('${pedido.id}', this.value)" class="text-[10px] font-bold uppercase px-2 py-1.5 bg-slate-100 border border-slate-200 rounded-xl outline-none cursor-pointer">
+                        <option value="pendiente" ${estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                        <option value="pagado" ${estado === 'pagado' ? 'selected' : ''}>Pagado</option>
+                        <option value="entregado" ${estado === 'entregado' ? 'selected' : ''}>Entregado</option>
+                        <option value="cancelado" ${estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -1718,7 +1631,7 @@ window.cambiarEstadoPedido = async function(pedidoId, nuevoEstado) {
         cargarPedidos(clienteActualId);
     } catch (error) {
         console.error("Error al cambiar estado:", error);
-        alert("❌ Error al cambiar el estado del pedido.");
+        alert("❌ Error al cambiar el estado.");
     }
 };
 
@@ -1731,79 +1644,3 @@ window.filtrarPedidos = function() {
 window.recargarPedidos = function() {
     cargarPedidos(clienteActualId);
 };
-
-window.verDetallePedido = function(pedidoId) {
-    const pedido = pedidosCache.find(p => p.id === pedidoId);
-    if (!pedido) {
-        notificar("⚠️ Pedido no encontrado");
-        return;
-    }
-
-    const items = pedido.items || [];
-    const fecha = pedido.fecha ? new Date(pedido.fecha).toLocaleString('es-VE') : 'Fecha no disponible';
-
-    let html = `
-    <div class="bg-white rounded-2xl max-w-2xl w-full mx-auto p-6 max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <h3 class="text-xl font-black text-slate-800">📋 ${escapeHtml(pedido.referencia || 'Sin referencia')}</h3>
-                <p class="text-xs text-slate-400">${fecha}</p>
-                <p class="text-xs font-bold mt-1">Estado: <span class="uppercase ${pedido.estado === 'pagado' ? 'text-emerald-600' : 'text-amber-600'}">${pedido.estado || 'pendiente'}</span></p>
-            </div>
-            <button onclick="this.closest('.fixed').remove()" class="text-slate-400 hover:text-slate-600 text-xl">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="space-y-3">
-            ${items.map(item => `
-            <div class="border-b border-slate-100 pb-3">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold text-sm text-slate-800">${escapeHtml(item.nombre || 'Producto')}</p>
-                        <p class="text-xs text-slate-500">Cantidad: ${item.cantidad || 0} x $${item.precioUnitario?.toFixed(2) || '0.00'}</p>
-                        ${item.extras && item.extras.length > 0 ? `
-                            <p class="text-[10px] text-slate-400">Extras: ${item.extras.map(e => escapeHtml(e.nombre)).join(', ')}</p>
-                        ` : ''}
-                    </div>
-                    <p class="font-bold text-emerald-600 text-sm">$${item.subtotal?.toFixed(2) || '0.00'}</p>
-                </div>
-            </div>
-            `).join('')}
-        </div>
-
-        <div class="mt-6 pt-4 border-t border-slate-200">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-slate-400">Total USD</p>
-                    <p class="text-2xl font-black text-emerald-600">$${pedido.totalUSD?.toFixed(2) || '0.00'}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-slate-400">Total Bs</p>
-                    <p class="text-2xl font-black text-slate-800">${(pedido.totalBS || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</p>
-                </div>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-2">Tasa BCV: ${pedido.tasaBCV?.toFixed(2) || 'N/A'} Bs/USD</p>
-        </div>
-
-        <div class="mt-6 flex gap-2">
-            <button onclick="window.cambiarEstadoPedido('${pedido.id}', 'pagado')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase">Marcar como Pagado</button>
-            <button onclick="window.cambiarEstadoPedido('${pedido.id}', 'entregado')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase">Marcar como Entregado</button>
-            <button onclick="this.closest('.fixed').remove()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold uppercase">Cerrar</button>
-        </div>
-    </div>
-    `;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center px-4';
-    overlay.innerHTML = html;
-    document.body.appendChild(overlay);
-};
-
-// ==================== NOTIFICACIONES ====================
-function notificar(msg) {
-    const toast = document.getElementById('toast');
-    toast.innerText = msg;
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
-}

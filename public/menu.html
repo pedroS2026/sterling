@@ -35,7 +35,7 @@
     <!-- Firebase App Check -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js"></script>
 
-    <script type="module" src="./js/menu-core.js?v=20260909"></script>
+    <script type="module" src="./js/menu-core.js?v=20260915"></script>
 </head>
 
 <div id="dynamic-bg" class="fixed inset-0 -z-10 bg-cover bg-center opacity-20 blur-sm scale-110 transition-all duration-700"></div>
@@ -47,10 +47,17 @@
         <p class="text-[10px] font-black uppercase mt-8 text-slate-300 tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
     </div>
 
-    <!-- Header sin tasa BCV -->
+    <!-- Header con Logo Personalizado -->
     <header id="main-header" class="bg-gradient-to-b from-black/80 to-transparent p-6 text-center shadow-lg">
         <div class="flex justify-between items-start">
-            <div>
+            <div class="flex-1">
+                <!-- ========== LOGO PERSONALIZADO ========== -->
+                <div id="shop-logo-container" class="hidden mb-4">
+                    <img id="shop-logo" src="" alt="Logo del negocio" 
+                         class="max-h-20 max-w-[200px] mx-auto object-contain drop-shadow-2xl">
+                </div>
+                <!-- ====================================== -->
+                
                 <h1 id="shop-name" class="text-4xl font-normal italic tracking-wide leading-none text-white drop-shadow-lg" 
                     style="font-family: 'Great Vibes', cursive;">
                     Cargando...
@@ -73,7 +80,7 @@
     <div id="category-filters" class="flex space-x-3 overflow-x-auto no-scrollbar px-8 py-6"></div>
     <main id="product-list" class="px-8 pb-32"></main>
 
-    <!-- Modal de detalle con carrusel -->
+    <!-- Modal de detalle -->
     <div id="detail-view" class="fixed inset-0 z-[500] bg-white hidden flex flex-col">
         <div id="detail-img-container" class="relative h-64 bg-slate-100 rounded-b-3xl flex items-center justify-center">
             <img id="detail-img" class="max-h-full max-w-full object-contain p-4" src="">
@@ -113,15 +120,14 @@
                 <p class="text-lg font-black text-emerald-600 italic"><span id="total-bs">0,00</span> Bs.</p>
             </div>
 
-            <!-- ========== CAMPO DE MESA (SOLO PARA NEGOCIOS DE COMIDA) ========== -->
+            <!-- Campo de mesa -->
             <div id="mesa-container" class="mb-4 hidden">
                 <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Número de Mesa</label>
                 <input type="number" id="input-mesa" placeholder="Ej: 5" min="1" max="99" 
                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 focus:bg-white transition-all">
             </div>
-            <!-- =========================================================== -->
 
-            <!-- ========== BOTÓN ÚNICO: PAGAR Y ENVIAR PEDIDO ========== -->
+            <!-- Botón único -->
             <button id="btn-pagar-wayu" onclick="pagarYEnviarPedido()" 
                     class="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                 <i class="fas fa-credit-card text-2xl"></i>
