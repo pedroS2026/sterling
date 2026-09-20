@@ -87,17 +87,81 @@ function escapeHtml(str) {
         .replaceAll(">", "&gt;");
 }
 
-// ==================== TEMAS VISUALES ====================
+
+// ==================== TEMAS VISUALES (CARRITO UNIFICADO) ====================
 const temas = {
-    fastfood: { primary: 'orange-500', bg: 'slate-900', label: 'Pedido', icon: 'fa-shopping-cart', gradient: 'from-orange-900 via-red-900 to-slate-950', wallpaper: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200' },
-    restaurant: { primary: 'emerald-700', bg: 'stone-900', label: 'Pedido', icon: 'fa-utensils', gradient: 'from-stone-800 via-zinc-900 to-black', wallpaper: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200' },
-    gourmet: { primary: 'rose-700', bg: 'slate-900', label: 'Reserva', icon: 'fa-wine-glass-alt', gradient: 'from-rose-900 via-purple-900 to-slate-950', wallpaper: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200' },
-    pizzeria: { primary: 'red-600', bg: 'slate-900', label: 'Pedido', icon: 'fa-pizza-slice', gradient: 'from-red-900 via-amber-900 to-slate-950', wallpaper: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200' },
-    cafe: { primary: 'amber-600', bg: 'stone-900', label: 'Orden', icon: 'fa-coffee', gradient: 'from-amber-900 via-brown-900 to-stone-950', wallpaper: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1200' },
-    mariscos: { primary: 'cyan-600', bg: 'slate-900', label: 'Pedido', icon: 'fa-fish', gradient: 'from-cyan-900 via-blue-900 to-slate-950', wallpaper: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?q=80&w=1200' },
-    parts: { primary: 'blue-600', bg: 'slate-900', label: 'Cotización', icon: 'fa-shopping-cart', gradient: 'from-slate-800 via-zinc-900 to-black', wallpaper: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200' },
-    bakery: { primary: 'pink-500', bg: 'rose-950', label: 'Encargo', icon: 'fa-shopping-cart', gradient: 'from-rose-950 via-pink-950 to-stone-950', wallpaper: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?q=80&w=1200' },
-    store: { primary: 'emerald-600', bg: 'zinc-900', label: 'Compra', icon: 'fa-shopping-cart', gradient: 'from-emerald-900 via-teal-900 to-slate-950', wallpaper: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=1200' }
+    fastfood: {
+        primary: 'orange-500',
+        bg: 'slate-900',
+        label: 'Pedido',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-orange-900 via-red-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200'
+    },
+    restaurant: {
+        primary: 'emerald-700',
+        bg: 'stone-900',
+        label: 'Pedido',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-stone-800 via-zinc-900 to-black',
+        wallpaper: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200'
+    },
+    gourmet: {
+        primary: 'rose-700',
+        bg: 'slate-900',
+        label: 'Reserva',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-rose-900 via-purple-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200'
+    },
+    pizzeria: {
+        primary: 'red-600',
+        bg: 'slate-900',
+        label: 'Pedido',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-red-900 via-amber-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200'
+    },
+    cafe: {
+        primary: 'amber-600',
+        bg: 'stone-900',
+        label: 'Orden',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-amber-900 via-brown-900 to-stone-950',
+        wallpaper: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1200'
+    },
+    mariscos: {
+        primary: 'cyan-600',
+        bg: 'slate-900',
+        label: 'Pedido',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-cyan-900 via-blue-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?q=80&w=1200'
+    },
+    parts: {
+        primary: 'blue-600',
+        bg: 'slate-900',
+        label: 'Cotización',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-slate-800 via-zinc-900 to-black',
+        wallpaper: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200'
+    },
+    bakery: {
+        primary: 'pink-500',
+        bg: 'rose-950',
+        label: 'Encargo',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-rose-950 via-pink-950 to-stone-950',
+        wallpaper: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?q=80&w=1200'
+    },
+    store: {
+        primary: 'emerald-600',
+        bg: 'zinc-900',
+        label: 'Compra',
+        icon: 'fa-shopping-cart',
+        gradient: 'from-emerald-900 via-teal-900 to-slate-950',
+        wallpaper: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=1200'
+    }
 };
 
 let unsubscribeFirestore = null;
