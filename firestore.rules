@@ -56,5 +56,10 @@ service cloud.firestore {
       // Solo modificable por Super Admin o el dueño del negocio
       allow write: if isSuperAdmin() || isOwner(estadisticaId);
     }
+	// ========== REGLA PARA CONTADORES ==========
+    match /artifacts/{appId}/public/data/contadores/{contadorId} {
+      allow read: if true;
+      allow write: if false;  // Solo el Admin SDK (backend) escribe
+    }
   }
 }

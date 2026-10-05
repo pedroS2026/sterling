@@ -51,7 +51,8 @@ const PAISES = {
     formatoLocal: 'es-VE',
     decimales: 2,
     emoji: '🇻🇪',
-    nombre: 'Venezuela'
+    nombre: 'Venezuela',
+    zonaHoraria: 'America/Caracas'
   },
   colombia: {
     moneda: 'COP',
@@ -59,14 +60,75 @@ const PAISES = {
     formatoLocal: 'es-CO',
     decimales: 0,
     emoji: '🇨🇴',
-    nombre: 'Colombia'
+    nombre: 'Colombia',
+    zonaHoraria: 'America/Bogota'
   }
 };
 
-// ========== RUTA PARA GENERAR LINK DE PAGO (SEGURA) ==========
+// ========== FUNCIÓN: OBTENER FECHA EN ZONA HORARIA LOCAL ==========
+function obtenerFechaLocal(zonaHoraria = 'America/Caracas') {
+  const ahora = new Date();
+  const formato = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zonaHoraria,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const fechaISO = formato.format(ahora); // YYYY-MM-DD
+  const [year, month, day] = fechaISO.split('-');
+  return {
+    fechaISO,                             // 2026-10-05
+    fechaCompacta: `${year}${month}${day}`, // 20261005
+    year, month, day
+  };
+}
+
+// ========== FUNCIÓN: GENERAR REFERENCIA CON CONTADOR DIARIO ==========
+async function generarReferenciaContador(clienteId, zonaHoraria = 'America/Caracas') {
+  const { fechaISO, fechaCompacta } = obtenerFechaLocal(zonaHoraria);
+  const contadorId = `${clienteId}_${fechaISO}`;
+  
+  const contadorRef = db
+    .collection('artifacts').doc(APP_ID)
+    .collection('public').doc('data')
+    .collection('contadores').doc(contadorId);
+  
+  // Transacción para evitar duplicados cuando hay pedidos simultáneos
+  const nuevoNumero = await db.runTransaction(async (transaction) => {
+    const contadorDoc = await transaction.get(contadorRef);
+    
+    let ultimoNumero = 0;
+    if (contadorDoc.exists) {
+      ultimoNumero = contadorDoc.data().ultimoNumero || 0;
+    }
+    
+    const siguienteNumero = ultimoNumero + 1;
+    
+    transaction.set(contadorRef, {
+      clienteId: clienteId,
+      fecha: fechaISO,
+      fechaCompacta: fechaCompacta,
+      ultimoNumero: siguienteNumero,
+      actualizadoEn: new Date().toISOString()
+    }, { merge: true });
+    
+    return siguienteNumero;
+  });
+  
+  const numeroFormateado = String(nuevoNumero).padStart(3, '0');
+  
+  return {
+    referencia: `${fechaCompacta}-${numeroFormateado}`,
+    numero: nuevoNumero,
+    fechaISO: fechaISO,
+    fechaCompacta: fechaCompacta
+  };
+}
+
+// ========== RUTA PARA GENERAR LINK DE PAGO ==========
 app.post('/api/crear-link-pago', async (req, res) => {
   try {
-    const { items, clienteId, pedidoId, mesa, tasaBCV } = req.body;
+    const { items, clienteId, mesa, tasaBCV } = req.body;
 
     // ========== 1. VALIDACIONES BÁSICAS ==========
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -77,16 +139,7 @@ app.post('/api/crear-link-pago', async (req, res) => {
       return res.status(400).json({ success: false, error: 'clienteId es requerido' });
     }
 
-    if (!pedidoId) {
-      return res.status(400).json({ success: false, error: 'pedidoId es requerido' });
-    }
-
-    console.log('📥 Pedido recibido:', {
-      clienteId,
-      pedidoId,
-      cantidadItems: items.length,
-      mesa: mesa || 'N/A'
-    });
+    console.log('📥 Pedido recibido para cliente:', clienteId);
 
     // ========== 2. CONSULTAR EL NEGOCIO EN FIRESTORE ==========
     const clienteRef = db
@@ -109,15 +162,20 @@ app.post('/api/crear-link-pago', async (req, res) => {
     const exentoIVA = business.exentoIVA === true || business.exentoIVA === 'true';
     const deliveryRecargo = business.deliveryRecargo || { activo: false, porcentaje: 3, label: 'Con Delivery' };
 
-    console.log(`🏢 Negocio: ${business.name || clienteId} | País: ${pais} | IVA exento: ${exentoIVA}`);
+    console.log(`🏢 Negocio: ${business.name || clienteId} | País: ${pais}`);
 
-    // ========== 3. VALIDAR Y CALCULAR TOTAL EN EL SERVIDOR ==========
+    // ========== 3. GENERAR REFERENCIA CON CONTADOR DIARIO ==========
+    const refData = await generarReferenciaContador(clienteId, configPais.zonaHoraria);
+    const referencia = refData.referencia;
+    
+    console.log(`📋 Referencia generada: ${referencia} (pedido #${refData.numero} del día)`);
+
+    // ========== 4. VALIDAR Y CALCULAR TOTAL EN EL SERVIDOR ==========
     let totalCalculadoUSD = 0;
     let tieneDelivery = false;
     const itemsValidados = [];
 
     for (const itemCliente of items) {
-      // Buscar el producto en el catálogo REAL de Firestore
       const productoCatalogo = productosCatalogo.find(
         p => String(p.id) === String(itemCliente.idOriginal)
       );
@@ -127,34 +185,29 @@ app.post('/api/crear-link-pago', async (req, res) => {
         continue;
       }
 
-      // Precio REAL desde Firestore (no confiamos en el cliente)
       const precioBase = parseFloat(productoCatalogo.price || 0);
       if (isNaN(precioBase) || precioBase < 0) {
-        console.warn(`⚠️ Precio inválido para producto: ${productoCatalogo.name}`);
+        console.warn(`⚠️ Precio inválido para: ${productoCatalogo.name}`);
         continue;
       }
 
-      // Validar cantidad
       const cantidad = parseInt(itemCliente.cantidad) || 0;
       if (cantidad <= 0 || cantidad > 100) {
         console.warn(`⚠️ Cantidad inválida: ${cantidad}`);
         continue;
       }
 
-      // ========== VALIDAR EXTRAS ==========
       let costoExtras = 0;
       const extrasDetalle = [];
       const extrasCatalogo = Array.isArray(productoCatalogo.extras) ? productoCatalogo.extras : [];
       const extrasCliente = Array.isArray(itemCliente.extras) ? itemCliente.extras : [];
 
       for (const extraCliente of extrasCliente) {
-        // Si es un flag de delivery, no es un extra con precio
         if (extraCliente.esDeliveryFlag === true) {
           tieneDelivery = true;
           continue;
         }
 
-        // Buscar el extra en el catálogo REAL
         const extraCatalogo = extrasCatalogo.find(
           e => (e.nombre || e.Nombre) === extraCliente.nombre
         );
@@ -166,12 +219,9 @@ app.post('/api/crear-link-pago', async (req, res) => {
             nombre: extraCatalogo.nombre || extraCatalogo.Nombre,
             precio: precioExtra
           });
-        } else {
-          console.warn(`⚠️ Extra no encontrado: ${extraCliente.nombre}`);
         }
       }
 
-      // ========== CALCULAR SUBTOTAL ==========
       const precioUnitario = precioBase + costoExtras;
       const subtotal = precioUnitario * cantidad;
       totalCalculadoUSD += subtotal;
@@ -187,7 +237,6 @@ app.post('/api/crear-link-pago', async (req, res) => {
       });
     }
 
-    // ========== 4. VALIDAR QUE HAYA ITEMS VÁLIDOS ==========
     if (itemsValidados.length === 0) {
       return res.status(400).json({ 
         success: false, 
@@ -218,13 +267,15 @@ app.post('/api/crear-link-pago', async (req, res) => {
 
     console.log(`💰 Total validado: $${totalConIVA.toFixed(2)} | Bs. ${totalFinalLocal}`);
 
-    // ========== 8. CREAR EL PEDIDO EN FIRESTORE (DESDE EL SERVIDOR) ==========
+    // ========== 8. CREAR EL PEDIDO EN FIRESTORE ==========
     const pedidoData = {
-      referencia: pedidoId,
+      referencia: referencia,
+      numeroDia: refData.numero,
       clienteId: clienteId,
       negocio: business.name || clienteId,
       pais: pais,
       fecha: new Date().toISOString(),
+      fechaLocal: refData.fechaISO,
       items: itemsValidados,
       totalUSD: parseFloat(totalConIVA.toFixed(2)),
       totalLocal: totalFinalLocal,
@@ -248,35 +299,36 @@ app.post('/api/crear-link-pago', async (req, res) => {
     const pedidoRef = db
       .collection('artifacts').doc(APP_ID)
       .collection('public').doc('data')
-      .collection('pedidos').doc(pedidoId);
+      .collection('pedidos').doc(referencia);
 
     await pedidoRef.set(pedidoData);
-    console.log(`✅ Pedido creado en Firestore: ${pedidoId}`);
+    console.log(`✅ Pedido creado: ${referencia}`);
 
-    // ========== 9. GENERAR LINK DE PAGO CON WAYU PAY ==========
+    // ========== 9. GENERAR LINK DE PAGO ==========
     const result = await wayu.checkout.generatePaymentUrl({
       amount: {
         value: parseFloat(totalConIVA.toFixed(2)),
         currency: 'USD',
       },
-      product_name: `Pedido ${pedidoId}`,
+      product_name: `Pedido ${referencia}`,
       product_description: `Pedido para ${business.name || clienteId}`,
     });
 
-    // ========== 10. ACTUALIZAR PEDIDO CON transactionId ==========
     await pedidoRef.update({
       transactionId: result.transactionId
     });
 
-    console.log(`✅ Link de pago generado: ${pedidoId}`);
+    console.log(`✅ Link de pago generado para ${referencia}`);
 
-    // ========== 11. RESPONDER AL CLIENTE ==========
+    // ========== 10. RESPONDER AL CLIENTE ==========
     res.json({
       success: true,
+      referencia: referencia,
       link: result.generatePaymentLink,
       transactionId: result.transactionId,
       totalValidado: parseFloat(totalConIVA.toFixed(2)),
-      totalLocal: totalFinalLocal
+      totalLocal: totalFinalLocal,
+      numeroDia: refData.numero
     });
 
   } catch (error) {
@@ -303,10 +355,8 @@ app.post('/api/webhook-wayu', async (req, res) => {
   if (event === 'payment.completed') {
     try {
       const pedidosRef = db
-        .collection('artifacts')
-        .doc(APP_ID)
-        .collection('public')
-        .doc('data')
+        .collection('artifacts').doc(APP_ID)
+        .collection('public').doc('data')
         .collection('pedidos');
 
       const querySnapshot = await pedidosRef.where('transactionId', '==', transactionId).get();

@@ -1,12 +1,12 @@
 /**
  * Digitaliza Urpín - Módulo del Carrito
- * VERSIÓN SEGURA: Solo envía items al backend, el backend calcula el total
+ * VERSIÓN CON REFERENCIA GENERADA EN EL BACKEND (contador diario)
  */
 
 import { calcularPrecios, APP_SETTINGS, getConfigPaisLocal } from './pricing.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ==================== CONFIGURACIÓN ====================
 const firebaseConfig = {
@@ -64,11 +64,6 @@ function escapeHtml(str) {
         .replaceAll(">", "&gt;");
 }
 
-function obtenerProductoOriginal(idOriginal) {
-    const productos = window.productosDataGlobal || [];
-    return productos.find(p => String(p.id) === String(idOriginal)) || null;
-}
-
 function notificar(mensaje) {
     const toast = document.getElementById('toast');
     if (toast) {
@@ -107,10 +102,6 @@ export function agregarAlCarrito(id, productosData, actualizarCarritoUI, notific
     }
 
     const precioTotalUnitario = precioBase + costoExtras;
-    if (isNaN(precioTotalUnitario)) {
-        console.error("Precio total inválido para producto:", p.name, precioBase, costoExtras);
-        return;
-    }
 
     const tieneDelivery = extrasNormalizados.some(e => e.esDeliveryFlag === true);
 
@@ -245,7 +236,6 @@ export function actualizarCarritoUI(exentoIVA = false) {
     const totalUsdEl = document.getElementById('total-usd');
     const totalBsEl = document.getElementById('total-bs');
     const ivaNoteEl = document.getElementById('iva-note');
-    const totalMonedaLabel = document.getElementById('total-moneda-label');
 
     if (totalUsdEl) totalUsdEl.innerText = totalConDelivery.toFixed(2);
     if (totalBsEl) {
@@ -253,10 +243,6 @@ export function actualizarCarritoUI(exentoIVA = false) {
             config.formatoLocal || 'es-VE',
             { minimumFractionDigits: config.decimales || 2 }
         );
-    }
-
-    if (totalMonedaLabel) {
-        totalMonedaLabel.innerText = moneda;
     }
 
     if (ivaNoteEl) {
@@ -267,7 +253,6 @@ export function actualizarCarritoUI(exentoIVA = false) {
         ivaNoteEl.innerText = nota;
     }
 
-    // ========== MOSTRAR/OCULTAR BOTÓN ÚNICO ==========
     const btnPagar = document.getElementById('btn-pagar-wayu');
     if (btnPagar) {
         if (carrito.length === 0) {
@@ -278,7 +263,7 @@ export function actualizarCarritoUI(exentoIVA = false) {
     }
 }
 
-// ==================== FUNCIÓN ÚNICA: PAGAR Y ENVIAR PEDIDO ====================
+// ==================== FUNCIÓN PRINCIPAL: PAGAR Y ENVIAR PEDIDO ====================
 export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
     if (carrito.length === 0) {
         notificar('❌ El carrito está vacío');
@@ -289,16 +274,9 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
     const nombreNegocio = escapeHtml(negocio.name || 'Digitaliza Urpín');
     const pais = negocio.pais || 'venezuela';
 
-    // ========== GENERAR REFERENCIA ÚNICA ==========
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-    const referencia = `REF-${timestamp.slice(-4)}-${random}`;
-
-    // ========== OBTENER MESA SI APLICA ==========
     const inputMesa = document.getElementById('input-mesa');
     const mesa = inputMesa && inputMesa.offsetParent !== null ? (parseInt(inputMesa.value) || null) : null;
 
-    // ========== PREPARAR ITEMS PARA ENVIAR AL BACKEND (SOLO IDs Y CANTIDADES) ==========
     const itemsParaEnviar = carrito.map(item => ({
         idOriginal: item.idOriginal,
         cantidad: item.qty || 0,
@@ -310,19 +288,6 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
 
     console.log('📤 Enviando items al backend:', itemsParaEnviar);
 
-    // ========== GUARDAR DATOS EN LOCALSTORAGE PARA DESPUÉS DEL PAGO ==========
-    localStorage.setItem('ultimoClienteId', CLIENTE_ID);
-    localStorage.setItem('pedidoPendiente', referencia);
-    localStorage.setItem('pedidoPendienteData', JSON.stringify({
-        referencia,
-        clienteId: CLIENTE_ID,
-        negocio: nombreNegocio,
-        telefono: (negocio.whatsapp || '584120000000').replace(/\D/g, ''),
-        pais,
-        mesa
-    }));
-
-    // ========== ENVIAR AL BACKEND (SOLO ITEMS, NO MONTOS) ==========
     notificar('🔄 Generando link de pago...');
 
     try {
@@ -332,7 +297,6 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
             body: JSON.stringify({
                 items: itemsParaEnviar,
                 clienteId: CLIENTE_ID,
-                pedidoId: referencia,
                 mesa: mesa,
                 tasaBCV: TASA_BCV || 0
             })
@@ -348,16 +312,23 @@ export async function pagarYEnviarPedido(configNegocio, CLIENTE_ID, TASA_BCV) {
             throw new Error(data.error || 'Error desconocido al generar link de pago');
         }
 
-        console.log('✅ Link de pago generado. Total validado: $' + data.totalValidado);
+        const referencia = data.referencia;
+        console.log('✅ Pedido creado con referencia:', referencia);
+        console.log('📊 Pedido #' + data.numeroDia + ' del día');
 
-        // ========== GUARDAR EL TOTAL VALIDADO EN LOCALSTORAGE ==========
-        const pedidoData = JSON.parse(localStorage.getItem('pedidoPendienteData'));
-        pedidoData.totalValidado = data.totalValidado;
-        pedidoData.totalLocal = data.totalLocal;
-        localStorage.setItem('pedidoPendienteData', JSON.stringify(pedidoData));
+        localStorage.setItem('ultimoClienteId', CLIENTE_ID);
+        localStorage.setItem('pedidoPendiente', referencia);
+        localStorage.setItem('pedidoPendienteData', JSON.stringify({
+            referencia,
+            clienteId: CLIENTE_ID,
+            negocio: nombreNegocio,
+            telefono: (negocio.whatsapp || '584120000000').replace(/\D/g, ''),
+            pais,
+            mesa,
+            numeroDia: data.numeroDia
+        }));
 
-        // ========== REDIRIGIR A WAYU PAY ==========
-        notificar('🔄 Abriendo Wayu Pay...');
+        notificar(`✅ Pedido #${data.numeroDia} del día. Abriendo Wayu Pay...`);
 
         setTimeout(() => {
             window.location.href = data.link;
