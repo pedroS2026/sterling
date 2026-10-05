@@ -2,33 +2,59 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ========== REGLA PARA CLIENTES (VERSIÓN DEFINITIVA) ==========
+    // Funciones auxiliares para simplificar lectura y mantenimiento
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.isSuperAdmin == true;
+    }
+    
+    function isOwner(clienteId) {
+      return isAuthenticated() && request.auth.token.clientId == clienteId;
+    }
+
+    // ========== REGLA PARA CLIENTES ==========
     match /artifacts/{appId}/public/data/clientes/{clienteId} {
-      // Permitir lectura si:
-      // 1. El cliente está activo (para menú público) → SIN autenticación
-      // 2. El usuario es Super Admin → puede ver todo
-      // 3. El usuario es el dueño de este cliente → puede verlo aunque esté inactivo
+      // Lectura pública si está activo, o autenticada si es superAdmin o dueño
       allow read: if resource.data.suscripcion.activo == true || 
-                   (request.auth != null && request.auth.token.isSuperAdmin == true) ||
-                   (request.auth != null && request.auth.token.clientId == clienteId);
+                     isSuperAdmin() || 
+                     isOwner(clienteId);
       
-      // Escritura: solo si está autenticado
-      allow write: if request.auth != null;
+      // Escritura: solo Super Admin o el dueño legítimo del cliente
+      allow write: if isSuperAdmin() || isOwner(clienteId);
     }
     
     // ========== REGLA PARA PEDIDOS ==========
     match /artifacts/{appId}/public/data/pedidos/{pedidoId} {
-      allow read, write: if true;
+      // Lectura pública (necesaria para pago-exitoso.html y seguimiento)
+      allow read: if true;
+      
+      // Creación bloqueada en cliente (Solo Vercel Admin SDK)
+      allow create: if false;
+      
+      // Actualización/Eliminación: Solo Super Admin o el dueño del negocio al que pertenece el pedido
+      allow update, delete: if isSuperAdmin() || 
+                               (isAuthenticated() && request.auth.token.clientId == resource.data.clienteId);
     }
     
     // ========== REGLA PARA REFERIDOS ==========
     match /artifacts/{appId}/public/data/referidos/{referidoId} {
-      allow read, write: if true;
+      // Lectura pública de códigos si es necesario, o restringida al dueño/superAdmin
+      allow read: if true;
+      
+      // Solo el dueño correspondiente o Super Admin puede modificar referidos
+      allow write: if isSuperAdmin() || isOwner(referidoId);
     }
     
     // ========== REGLA PARA ESTADÍSTICAS ==========
     match /artifacts/{appId}/public/data/estadisticas/{estadisticaId} {
-      allow read, write: if true;
+      // Solo visible para usuarios autenticados (Panel Admin)
+      allow read: if isAuthenticated();
+      
+      // Solo modificable por Super Admin o el dueño del negocio
+      allow write: if isSuperAdmin() || isOwner(estadisticaId);
     }
   }
 }

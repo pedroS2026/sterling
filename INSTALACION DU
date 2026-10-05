@@ -1,18 +1,18 @@
-sudo apt update
-sudo apt upgrade
+1./ sudo apt update
+2./ sudo apt upgrade
 
-sudo apt install python3
-sudo apt install python3-venv
-sudo apt install python3-pip
+3./ sudo apt install python3
+4./ sudo apt install python3-venv
+5./ sudo apt install python3-pip
 
-sudo apt install nodejs npm
+6./ sudo apt install nodejs npm
 
-npm install -g firebase-tools
+7./ npm install -g firebase-tools
 
-python3 -m venv venv
-source venv/bin/activate
+8./ python3 -m venv venv
+9./ source venv/bin/activate
 
-pip install -r requirements.txt
+10./ pip install -r requirements.txt
 
-firebase login
-firebase use digitaliza-urpin
+11./ firebase login
+12./ firebase use digitaliza-urpin

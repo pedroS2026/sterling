@@ -1,246 +1,330 @@
-digitaliza-urpin/
+📁 1. ESTRUCTURA DE ARCHIVOS (Local)
+text
+
+digitaliza-urpin-limpio/
 │
-├── public/                          # Archivos públicos (frontend)
-│   ├── admin.html                   # Panel de administración (CRUD, pedidos, referidos)
-│   ├── menu.html                    # Menú público (catálogo + carrito)
-│   ├── index.html                   # Landing page principal
+├── public/                              # Frontend (Firebase Hosting)
+│   ├── index.html                       # Landing page principal
+│   ├── menu.html                        # Menú público (catálogo + carrito)
+│   ├── admin.html                       # Panel de administración
+│   ├── pago-exitoso.html                # 🆕 Página post-pago (auto-WhatsApp)
 │   │
 │   ├── css/
-│   │   └── styles.css               # Estilos personalizados (Tailwind + extras)
+│   │   └── styles.css                   # Estilos personalizados
 │   │
 │   ├── js/
-│   │   ├── admin.js                 # Lógica del panel admin
-│   │   ├── menu-core.js             # Lógica del menú público (carrusel, productos)
-│   │   ├── cart.js                  # Carrito, WhatsApp y guardado en Firestore
-│   │   ├── pricing.js               # Cálculo de precios (USD, Bs., IVA)
-│   │   ├── currency.js              # Multi-monedas y tasas (VE/CO)
-│   │   └── index.js                 # Lógica de la landing page
+│   │   ├── index.js                     # Lógica de la landing page
+│   │   ├── menu-core.js                 # Lógica del menú + botón único
+│   │   ├── cart.js                      # Carrito + pago Wayu Pay + WhatsApp
+│   │   ├── admin.js                     # Panel admin (CRUD, pedidos, referidos)
+│   │   ├── pricing.js                   # Cálculo de precios (USD, Bs., IVA)
+│   │   └── currency.js                  # Multi-monedas y tasas (VE/CO)
 │   │
-│   ├── icons/                       # Íconos para PWA (opcional)
-│   │   ├── icon-192.png
-│   │   └── icon-512.png
-│   │
-│   └── sounds/                      # Sonidos para notificaciones (opcional)
-│       └── notification.mp3
+│   └── icons/                           # Íconos PWA (opcional)
 │
-├── database/                        # Backup de productos (JSON)
-│   └── productos.json               # Ejemplo de productos precargados
+├── backend-api/                         # Backend de pagos (Vercel)
+│   ├── index.js                         # Servidor Express + Wayu Pay + Webhook
+│   ├── package.json                     # Dependencias (firebase-admin, wayu-js-sdk, express)
+│   ├── vercel.json                      # Configuración de despliegue Vercel
+│   ├── .env                             # Variables de entorno (NO subir a Git)
+│   └── serviceAccountKey.json           # Credenciales Firebase (NO subir a Git)
 │
-├── qrcodes/                         # Códigos QR generados automáticamente
-│   └── qr_cliente.png               # QR por cada cliente registrado
+├── database/                            # Backups de productos (JSON)
+│   ├── burgers.json
+│   ├── lanona.json
+│   ├── gourmet.json
+│   └── ...
 │
-├── firebase.json                    # Configuración de Firebase Hosting
-├── firestore.rules                  # Reglas de seguridad de Firestore
-├── firestore.indexes.json           # Índices de Firestore (optimización)
-├── .firebaserc                      # Configuración del proyecto Firebase
-├── serviceAccountKey.json           # Credenciales de Firebase Admin (¡NO SUBIR A GIT!)
-├── main.py                          # Script para registrar clientes (multi-país)
-├── migrar-extras.js                 # Script para migrar extras (Node.js)
-├── package.json                     # Dependencias de Node.js
-├── package-lock.json                # Lock de dependencias
-└── README.md                        # Documentación del proyecto
+├── functions/                           # Cloud Functions (opcional)
+│
+├── scripts/                             # Scripts de utilidad (Python)
+│   ├── main.py                          # Registrar nuevos clientes
+│   ├── crear_usuario.py                 # Crear usuarios en Firebase Auth
+│   ├── cambiar_password.py              # Cambiar contraseñas
+│   ├── assign_client_claims.py          # Asignar claims a usuarios
+│   ├── añadir_extras.py                 # Migrar extras a productos
+│   └── migrar-extras.js                 # Migración de Node.js
+│
+├── firebase.json                        # Configuración de Firebase
+├── firestore.rules                      # Reglas de seguridad de Firestore
+├── firestore.indexes.json               # Índices de Firestore
+├── .firebaserc                          # Proyecto Firebase vinculado
+├── .gitignore                           # Archivos excluidos de Git
+└── README.md                            # Documentación del proyecto
 
-ESTRUCTURA EN FIRESTORE
+🗄️ 2. ESTRUCTURA DE FIRESTORE (Base de Datos)
+text
 
 artifacts/
 └── digitaliza-urpin-2026/
     └── public/
         └── data/
-            ├── clientes/
-            │   ├── {cliente_id}/
-            │   │   ├── business/
-            │   │   │   ├── name: "Nombre del Negocio"
-            │   │   │   ├── accent: "Palabra Resaltada"
-            │   │   │   ├── whatsapp: "584120000000"
-            │   │   │   ├── type: "food" | "parts" | "bakery" | "store"
-            │   │   │   ├── exentoIVA: true | false
-            │   │   │   └── pais: "venezuela" | "colombia"
-            │   │   │
-            │   │   ├── products/
-            │   │   │   └── [
-            │   │   │         {
-            │   │   │           "id": "prod_abc123",
-            │   │   │           "name": "Producto",
-            │   │   │           "price": 10.50,
-            │   │   │           "category": "Categoría",
-            │   │   │           "desc": "Descripción del producto",
-            │   │   │           "img": "https://...",
-            │   │   │           "images": ["https://...", "https://..."],
-            │   │   │           "extras": [{ "nombre": "Extra", "precio": 1.50 }],
-            │   │   │           "active": true,
-            │   │   │           "createdAt": "2026-07-25T...",
-            │   │   │           "updatedAt": "2026-07-25T..."
-            │   │   │         }
-            │   │   │       ]
-            │   │   │
-            │   │   ├── referidos/
-            │   │   │   ├── codigo: "REF-XXXX-XXXX"
-            │   │   │   ├── referidosActivos: ["cliente1", "cliente2"]
-            │   │   │   ├── referidosPendientes: ["cliente3"]
-            │   │   │   ├── mesesGratisAcumulados: 0
-            │   │   │   └── mesesGratisUsados: 0
-            │   │   │
-            │   │   └── suscripcion/
-            │   │       ├── plan: "basico" | "pro" | "business"
-            │   │       ├── activo: true | false
-            │   │       ├── fechaInicio: "2026-07-25"
-            │   │       ├── fechaFin: "2026-08-25"
-            │   │       ├── productosMax: 10 | 50 | 9999
-            │   │       ├── extrasEnabled: true | false
-            │   │       └── dashboardEnabled: true | false
-            │   │
-            │   └── ...
             │
-            └── pedidos/
-                └── {REF-XXXX-XXXX}/
+            ├── clientes/                        # Colección de negocios
+            │   └── {cliente_id}/               # ej: burgers, lanona, gourmet
+            │       ├── business/               # Metadatos del negocio
+            │       │   ├── name: "Urpin Burger & Grill"
+            │       │   ├── accent: "Burger & Grill"
+            │       │   ├── whatsapp: "584120000000"
+            │       │   ├── type: "fastfood" | "restaurant" | "gourmet" | ...
+            │       │   ├── exentoIVA: true | false
+            │       │   ├── pais: "venezuela" | "colombia"
+            │       │   └── deliveryRecargo: { activo, porcentaje, label }
+            │       │
+            │       ├── products: [              # Array de productos
+            │       │   {
+            │       │     id: "prod_abc123",
+            │       │     name: "Hamburguesa Clásica",
+            │       │     price: 5.50,
+            │       │     category: "Hamburguesas",
+            │       │     desc: "Deliciosa hamburguesa...",
+            │       │     img: "https://...",
+            │       │     images: ["https://...", "https://..."],
+            │       │     extras: [{ nombre: "Extra Queso", precio: 1.00 }],
+            │       │     active: true,
+            │       │     createdAt: "2026-07-25T...",
+            │       │     updatedAt: "2026-09-10T..."
+            │       │   }
+            │       │ ]
+            │       │
+            │       ├── referidos/                # Sistema de referidos
+            │       │   ├── codigo: "REF-BURG-XXXX"
+            │       │   ├── referidosActivos: []
+            │       │   ├── referidosPendientes: []
+            │       │   ├── mesesGratisAcumulados: 0
+            │       │   └── mesesGratisUsados: 0
+            │       │
+            │       └── suscripcion/              # Plan del cliente
+            │           ├── plan: "basico" | "pro" | "business"
+            │           ├── activo: true | false
+            │           ├── fechaInicio: "2026-07-25"
+            │           ├── fechaFin: "2026-08-25"
+            │           ├── productosMax: 10 | 50 | 9999
+            │           ├── extrasEnabled: true | false
+            │           └── dashboardEnabled: true | false
+            │
+            └── pedidos/                          # Colección de pedidos
+                └── {REF-XXXX-XXXX}/              # Referencia única del pedido
                     ├── referencia: "REF-XXXX-XXXX"
-                    ├── clienteId: "esthermendoza"
-                    ├── negocio: "TORTAS ESTHER"
-                    ├── fecha: "2026-07-25T15:30:00.000Z"
+                    ├── clienteId: "burgers"
+                    ├── negocio: "Urpin Burger & Grill"
+                    ├── fecha: "2026-09-10T..."
                     ├── items: [
                     │     {
-                    │       "nombre": "Mini Torta",
-                    │       "cantidad": 1,
-                    │       "precioUnitario": 5.50,
-                    │       "subtotal": 5.50,
-                    │       "extras": []
+                    │       nombre: "Hamburguesa Clásica",
+                    │       cantidad: 2,
+                    │       precioUnitario: 5.50,
+                    │       subtotal: 11.00,
+                    │       extras: []
                     │     }
                     │   ]
-                    ├── totalUSD: 5.50
-                    ├── totalBS: 4059.00
+                    ├── totalUSD: 11.00
+                    ├── totalLocal: 4500.00
                     ├── exentoIVA: false
-                    ├── tasaBCV: 737.88
+                    ├── tasaBCV: 409.09
                     ├── estado: "pendiente" | "pagado" | "entregado" | "cancelado"
-                    ├── pais: "venezuela" | "colombia"
-                    └── moneda: "Bs." | "COP"
+                    ├── paymentStatus: "pending" | "completed"
+                    ├── transactionId: "txn_..." (Wayu Pay)
+                    ├── fechaPago: "2026-09-10T..."
+                    ├── pagoConfirmado: true | false
+                    ├── pais: "venezuela"
+                    ├── moneda: "Bs."
+                    └── negocioData: { name, whatsapp, accent, type, exentoIVA }
 
+🌐 3. BACKEND API (Vercel)
+Rutas disponibles:
+Ruta	Método	Descripción
+/api/health	GET	Verifica que el backend esté vivo
+/api/crear-link-pago	POST	Genera el link de pago con Wayu Pay
+/api/webhook-wayu	POST	Recibe notificaciones de Wayu Pay y actualiza Firestore
+Variables de entorno en Vercel:
+Variable	Descripción
+WAYU_PUBLIC_KEY	Clave pública de Wayu Pay
+WAYU_SECRET_KEY	Clave secreta de Wayu Pay
+WAYU_WEBHOOK_SECRET	Secreto para validar webhooks
+GOOGLE_APPLICATION_CREDENTIALS_JSON	Contenido completo de serviceAccountKey.json
+🎨 4. FRONTEND (Firebase Hosting)
+Páginas:
+Página	URL	Descripción
+Landing	/index.html	Página de captación de clientes
+Menú	/menu.html?id={cliente}	Catálogo público del negocio
+Admin	/admin.html	Panel de administración
+Pago Exitoso	/pago-exitoso.html	Post-pago, auto-WhatsApp
+Funcionalidades del menú (menu.html):
 
+    ✅ Catálogo con fotos, precios en USD y Bs.
 
-ESTRUTURA DE SEGURIDAD (FIRESTORE RULES)
+    ✅ Búsqueda de productos.
 
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Clientes: lectura pública, escritura solo autenticada
-    match /artifacts/{appId}/public/data/clientes/{clienteId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    
-    // Pedidos: lectura y escritura pública (para menús no autenticados)
-    match /artifacts/{appId}/public/data/pedidos/{pedidoId} {
-      allow read, write: if true;
-    }
-    
-    // Referidos: lectura y escritura pública
-    match /artifacts/{appId}/public/data/referidos/{referidoId} {
-      allow read, write: if true;
-    }
-  }
-}
+    ✅ Filtros por categoría.
 
+    ✅ Modal de detalle con carrusel de imágenes.
 
+    ✅ Extras/opciones personalizables.
 
+    ✅ Delivery con recargo.
 
-TEMAS VISUALES  (ESTILOS)
+    ✅ Campo de mesa (para restaurantes).
 
-const temas = {
-    food: {
-        primary: 'orange-500',
-        bg: 'slate-900',
-        label: 'Pedido',
-        icon: 'fa-shopping-cart',
-        gradient: 'from-orange-900 via-red-900 to-slate-950',
-        wallpaper: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836'
-    },
-    parts: {
-        primary: 'blue-600',
-        bg: 'slate-900',
-        label: 'Cotización',
-        icon: 'fa-shopping-cart',
-        gradient: 'from-slate-800 via-zinc-900 to-black',
-        wallpaper: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd'
-    },
-    bakery: {
-        primary: 'pink-500',
-        bg: 'rose-950',
-        label: 'Encargo',
-        icon: 'fa-shopping-cart',
-        gradient: 'from-rose-950 via-pink-950 to-stone-950',
-        wallpaper: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b'
-    },
-    store: {
-        primary: 'emerald-600',
-        bg: 'zinc-900',
-        label: 'Compra',
-        icon: 'fa-shopping-cart',
-        gradient: 'from-emerald-900 via-teal-900 to-slate-950',
-        wallpaper: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9'
-    }
-};
+    ✅ Carrito con botón único "PAGAR Y ENVIAR PEDIDO".
 
+Funcionalidades del admin (admin.html):
 
-💰 PLANES DE SUSCRIPCIÓN
-Plan	Productos	Extras	Dashboard	Precio
-Básico	10	❌	❌	$9.99/mes
-Pro	50	✅	✅	$19.99/mes
-Business	∞	✅	✅	$29.99/mes
+    ✅ Autenticación con roles (Super Admin / Admin).
 
+    ✅ Selección de cliente (multi-inquilino).
 
-🌎 PAÍSES SOPORTADOS
+    ✅ Gestión de productos (CRUD).
+
+    ✅ Edición de metadatos del negocio.
+
+    ✅ Gestión de suscripciones (Básico / Pro / Business).
+
+    ✅ Activación/desactivación de negocios.
+
+    ✅ Sistema de referidos.
+
+    ✅ Visualización de pedidos.
+
+    ✅ Estadísticas de ventas.
+
+    ✅ Generación de QR por cliente.
+
+💳 5. PASARELA DE PAGO (Wayu Pay)
+Métodos de pago soportados:
+
+    ✅ Pago Móvil C2P (Comercio a Persona)
+
+    ✅ Tarjeta de Crédito/Débito
+
+    ✅ Criptomonedas (USDT, BTC)
+
+Flujo de pago:
+text
+
+Cliente hace clic en "PAGAR Y ENVIAR PEDIDO"
+    ↓
+Frontend guarda pedido en Firestore (estado: pendiente)
+    ↓
+Frontend envía POST a /api/crear-link-pago
+    ↓
+Backend genera link con Wayu Pay SDK
+    ↓
+Cliente es redirigido a Wayu Pay
+    ↓
+Cliente paga
+    ↓
+Wayu Pay envía webhook a /api/webhook-wayu
+    ↓
+Backend actualiza pedido en Firestore (estado: pagado)
+    ↓
+Wayu Pay redirige a /pago-exitoso.html
+    ↓
+pago-exitoso.html abre WhatsApp automáticamente
+    ↓
+Dueño del negocio recibe pedido PAGADO
+
+🔗 6. SERVICIOS EXTERNOS INTEGRADOS
+Servicio	Uso
+Firebase	Hosting, Firestore, Authentication, App Check
+Vercel	Backend API (Node.js + Express)
+Wayu Pay	Pasarela de pago (Pago Móvil C2P)
+ImgBB	Almacenamiento de imágenes
+GitHub	Control de versiones y despliegue
+Unsplash	Wallpapers de los temas visuales
+Google Fonts	Tipografías (Inter, Great Vibes)
+Font Awesome	Iconografía
+Tailwind CSS	Estilos (CDN)
+🎯 7. PLANES DE SUSCRIPCIÓN
+Plan	Precio	Productos	Extras	Dashboard	Pago Integrado
+Básico	$9.99/mes	10	❌	❌	✅
+Pro	$19.99/mes	50	✅	✅	✅
+Business	$29.99/mes	∞	✅	✅	✅
+🌎 8. PAÍSES SOPORTADOS
 País	Moneda	Tasa	IVA	Formato
 Venezuela	Bs.	BCV	16%	es-VE
 Colombia	COP	TRM	19%	es-CO
+🎨 9. TEMAS VISUALES POR TIPO DE NEGOCIO
+Tipo	Color Primario	Gradiente	Uso
+fastfood	Naranja	Orange → Red	Comida rápida
+restaurant	Esmeralda	Stone → Black	Restaurantes elegantes
+gourmet	Rosa vino	Rose → Purple	Gourmet / Vinos
+pizzeria	Rojo	Red → Amber	Pizzerías
+cafe	Ámbar	Amber → Brown	Cafeterías
+mariscos	Cian	Cyan → Blue	Mariscos
+bakery	Rosa	Rose → Pink	Repostería
+parts	Azul	Slate → Black	Ferreterías
+store	Esmeralda	Emerald → Teal	Tiendas
+🔐 10. SEGURIDAD
+Componente	Implementación
+Reglas de Firestore	Lectura pública para clientes activos, escritura autenticada
+App Check	ReCaptcha v3
+Autenticación	Firebase Auth con Custom Claims (clientId, isSuperAdmin)
+Variables de entorno	En Vercel (nunca en el código)
+Secretos	serviceAccountKey.json en .gitignore
+HTTPS	Automático en Firebase y Vercel
+📊 11. SISTEMA DE REFERIDOS
 
+    Código único por cliente: REF-XXXX-XXXX
 
-FLUJO DE DATOS
+    Meses gratis acumulables: máximo 6 al año
 
-1. Cliente entra al menú → menu-core.js
-2. Firebase lee datos de Firestore → clientes/{id}
-3. Cliente agrega producto al carrito → cart.js
-4. Cliente finaliza pedido → cart.js
-5. Pedido se guarda en Firestore → pedidos/{REF}
-6. Pedido se envía por WhatsApp → wa.me/{telefono}
-7. Admin muestra pedidos → admin.js
-8. Admin actualiza estado → admin.js
-9. Admin gestiona productos → admin.js
+    Referidos activos y pendientes
 
+    Barra de progreso en el panel admin
 
-COMANDOS UTILES
+🚀 12. INFRAESTRUCTURA DE DESPLIEGUE
+text
 
-# Desplegar hosting
-firebase deploy --only hosting
+┌─────────────────────────────────────────────────────┐
+│                    CLIENTE FINAL                    │
+│            (Móvil / Tablet / Desktop)               │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              FIREBASE HOSTING                       │
+│    https://digitaliza-urpin.web.app                 │
+│    - index.html, menu.html, admin.html              │
+│    - pago-exitoso.html                              │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              VERCEL (Backend API)                   │
+│    https://sterling-gold.vercel.app                 │
+│    - /api/crear-link-pago                           │
+│    - /api/webhook-wayu                              │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│           WAYU PAY (Pasarela de Pago)               │
+│    - Pago Móvil C2P, Tarjeta, Cripto                │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              FIRESTORE (Base de Datos)              │
+│    - clientes, pedidos, referidos                   │
+└─────────────────────────────────────────────────────┘
 
-# Desplegar reglas de Firestore
-firebase deploy --only firestore
-
-# Desplegar todo
-firebase deploy
-
-# Ejecutar localmente
-firebase serve
-
-# Registrar un cliente
-python main.py
-
-# Migrar extras (Node.js)
-node migrar-extras.js
-
-
-
-
-📝 NOTAS IMPORTANTES
-
-    serviceAccountKey.json → ¡NO SUBIR A GIT! Está en .gitignore
-
-    Firebase Blaze → Solo necesario si superas las 50,000 lecturas/día
-
-    ImgBB API Key → 8cf60d8646c39f74f88271f1fb63a73e (no cambiarla)
-
-    App Check → ReCAPTCHA v3: 6LcDST0tAAAAAIsL4Py1fORj7RKUEx-u-16fU0zD
-
-    Multi-país → Campo pais en business de cada cliente
-
-
+✅ RESUMEN: CON QUÉ CUENTAS ACTUALMENTE
+Componente	Estado
+Frontend completo (menú, admin, landing)	✅
+Backend API con Express	✅
+Pasarela de pago Wayu Pay integrada	✅
+Webhook para confirmación de pagos	✅
+Base de datos Firestore multi-inquilino	✅
+Sistema de autenticación con roles	✅
+Multi-país (Venezuela + Colombia)	✅
+9 temas visuales por tipo de negocio	✅
+Sistema de referidos	✅
+Planes de suscripción	✅
+Página de pago exitoso con auto-WhatsApp	✅
+Botón único "PAGAR Y ENVIAR PEDIDO"	✅
+Despliegue en Firebase + Vercel	✅
+Control de versiones en GitHub	✅
+Listo para producción	⏳ (mañana)
 
 
